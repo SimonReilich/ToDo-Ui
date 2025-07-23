@@ -5,7 +5,7 @@ import {Observable} from "rxjs";
 export interface Reminder {
     id: number;
     title: string;
-    date: number;
+    date: string;
     category: string;
     done: boolean;
 }

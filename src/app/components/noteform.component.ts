@@ -1,53 +1,87 @@
-import {Component, output} from '@angular/core';
+import {Component, inject, output} from '@angular/core';
 import {Note, NoteService} from "../api/note.service";
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
+import {MatButton} from "@angular/material/button";
+import {MatFormField, MatInput} from "@angular/material/input";
+import {MatLabel} from "@angular/material/form-field";
+import {MatOption, MatSelect} from "@angular/material/select";
+import {MatListModule} from "@angular/material/list";
+import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
 
 @Component({
-  selector: 'note-form-component',
-  imports: [
-    ReactiveFormsModule,
-  ],
-  template: `
-    <form>
-      <div>title</div>
-      <input type="text" id="title" [formControl]="title">
-      <div>description</div>
-      <input type="text" id="desc" [formControl]="desc">
-      <div>important</div>
-      <input type="checkbox" id="imp" [formControl]="imp">
-    </form>
-    <button (click)="add()">add note</button>
-  `,
-  styles: `
-    form {
-      background-color: aliceblue;
-      margin: 1rem 2rem;
-      padding: 1rem;
-      border: 1px solid lightgray;
-      border-radius: 0.75rem;
-    }
-
-    button {
-      margin: 1rem 2rem;
-    }`
+    selector: 'note-form-component',
+    imports: [
+        ReactiveFormsModule,
+        MatButton,
+    ],
+    template: `
+        <button (click)="openBottomSheet()" matButton="outlined">add</button>
+    `,
+    styles: ``
 })
 export class NoteformComponent {
 
-  title = new FormControl('');
-  desc = new FormControl('');
-  imp = new FormControl(false);
+    saved = output<Note>();
 
-  saved = output<Note>();
+    private _bottomSheet = inject(MatBottomSheet);
 
-  constructor(private readonly noteService: NoteService) {}
+    openBottomSheet(): void {
+        this._bottomSheet.open(BottomSheetOverviewExampleSheet);
+    }
 
-  add() {
-    this.noteService.create(<Note>{
-      id: 0,
-      name: this.title.value,
-      description: this.desc.value,
-      reminders: [],
-      category: this.imp.value ? "Important" : "ToDo",
-    }).subscribe(note => this.saved.emit(note))
-  }
+    add(note: Note) {
+        this.saved.emit(note)
+    }
+}
+
+@Component({
+    selector: 'create-note-sheet',
+    template: `
+        <form>
+            <mat-form-field>
+                <mat-label>title</mat-label>
+                <input matInput type="text" id="title" [formControl]="title">
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>description</mat-label>
+                <textarea matInput type="text" id="desc" [formControl]="desc"></textarea>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>category</mat-label>
+                <mat-select [formControl]="imp">
+                    <mat-option value="ToDo">ToDo</mat-option>
+                    <mat-option value="Important">Important</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </form>
+        <button (click)="add()" matButton="outlined" class="formButton">create</button>`,
+    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel],
+})
+
+export class BottomSheetOverviewExampleSheet {
+    saved = output<Note>();
+    title = new FormControl('');
+    desc = new FormControl('');
+    imp = new FormControl('ToDo');
+    private _bottomSheetRef =
+        inject<MatBottomSheetRef<BottomSheetOverviewExampleSheet>>(MatBottomSheetRef);
+
+    constructor(private noteService: NoteService) {
+    }
+
+    openLink(event: MouseEvent): void {
+        this._bottomSheetRef.dismiss();
+        event.preventDefault();
+    }
+
+    add() {
+        this.noteService.create(<Note>{
+            id: 0,
+            name: this.title.value,
+            description: this.desc.value,
+            reminders: [],
+            category: this.imp.value,
+        }).subscribe(note => this.saved.emit(note));
+        this._bottomSheetRef.dismiss();
+    }
 }

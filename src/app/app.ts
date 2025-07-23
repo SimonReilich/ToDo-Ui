@@ -6,6 +6,14 @@ import {NoteformComponent} from "./components/noteform.component";
 import {Reminder, ReminderService} from "./api/reminder.service";
 import {scan, startWith, Subject, switchMap} from "rxjs";
 import {RemformComponent} from "./components/remform.component";
+import {MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle} from "@angular/material/card";
+import {MatButton} from "@angular/material/button";
+import {MatGridList, MatGridTile} from "@angular/material/grid-list";
+import {MatDivider} from "@angular/material/list";
+import {MatToolbar} from "@angular/material/toolbar";
+import {MatChip} from "@angular/material/chips";
+import {MatCheckbox} from "@angular/material/checkbox";
+import {NgStyle} from "@angular/common";
 
 interface NoteMessage {
     type: 'D' | 'C' | 'E' | 'ER' | 'DR';
@@ -30,24 +38,24 @@ function processNotes(state: Note[], msg: NoteMessage): Note[] {
             return state
         case 'ER':
             return state.map((note: Note) => {
-            if (note.reminders.find((r: Reminder) => r.id == msg.reminder!.id)) {
-                return {
-                    id: note.id,
-                    name: note.name,
-                    description: note.description,
-                    reminders: note.reminders.map((r: Reminder) => {
-                        if (r.id == msg.reminder!.id) {
-                            return msg.reminder!;
-                        } else {
-                            return r;
-                        }
-                    }),
-                    category: note.category,
+                if (note.reminders.find((r: Reminder) => r.id == msg.reminder!.id)) {
+                    return {
+                        id: note.id,
+                        name: note.name,
+                        description: note.description,
+                        reminders: note.reminders.map((r: Reminder) => {
+                            if (r.id == msg.reminder!.id) {
+                                return msg.reminder!;
+                            } else {
+                                return r;
+                            }
+                        }),
+                        category: note.category,
+                    }
+                } else {
+                    return note
                 }
-            } else {
-                return note
-            }
-        })
+            })
         case 'DR':
             return state.map((note) => {
                 return {
@@ -76,60 +84,87 @@ function processRems(state: Reminder[], msg: RemMessage): Reminder[] {
 
 @Component({
     selector: 'td-root',
-    imports: [RouterOutlet, NoteformComponent, RemformComponent],
+    imports: [RouterOutlet, NoteformComponent, RemformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatToolbar, MatChip, MatDivider, MatCheckbox, NgStyle],
     template: `
-        <h1>Welcome to {{ title() }}!</h1>
+        <mat-toolbar>
+            <span>Welcome to {{ title() }}!</span>
+        </mat-toolbar>
 
         <h1>Your Notes</h1>
 
-        @for (note of notes(); track note.id) {
-            <div class="container">
-                <h2>{{ note.name }}</h2>
-                <h5>{{ note.category }}</h5>
-                <div>{{ note.description }}</div>
-                <ul>
-                    @for (reminder of note.reminders; track reminder.id) {
-                        <li>
-                            <h3>{{ reminder.title }}</h3>
-                            <h5>{{ reminder.category }}</h5>
-                            <div>{{ reminder.date }}</div>
-                            <div>{{ reminder.done }}</div>
-                            @if (!reminder.done) {
-                                <button (click)="done(reminder.id)" class="done">done</button>
+        <mat-grid-list cols="3" rowHeight="fit" [ngStyle]="applyNoteContainerHeight()">
+            @for (note of notes(); track note.id) {
+                <mat-grid-tile>
+                    <mat-card appearance="outlined" class="card">
+                        <mat-card-header>
+                            <mat-card-title>{{ note.name }}</mat-card-title>
+                            <mat-chip>{{ note.category }}</mat-chip>
+                        </mat-card-header>
+                        <mat-divider></mat-divider>
+                        <mat-card-content>
+                            <p class="desc">{{ note.description }}</p>
+                            @for (reminder of note.reminders; track reminder.id) {
+                                <mat-divider></mat-divider>
+                                <div class="reminderItem">
+                                    <div class="header">
+                                        <span>{{ reminder.title }}</span>
+                                        <mat-chip>{{ reminder.category }}</mat-chip>
+                                        <span class="date">{{ reminder.date }}</span>
+                                    </div>
+                                    <div class="buttons">
+                                        <button (click)="removeRemFromNote(note.id, reminder.id)" matButton>remove
+                                        </button>
+                                        @if (!reminder.done) {
+                                            <button matButton (click)="done(reminder.id)">done</button>
+                                        }
+                                        <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
+                                    </div>
+                                </div>
                             }
-                            <button (click)="removeRemFromNote(note.id, reminder.id)">remove reminder</button>
-                        </li>
-                    }
-                </ul>
-                <button (click)="deleteNote(note.id)">delete</button>
-            </div>
-        }
+                        </mat-card-content>
+                        <mat-divider></mat-divider>
+                        <mat-card-actions>
+                            <button matButton="outlined" (click)="deleteNote(note.id)">delete</button>
+                        </mat-card-actions>
+                    </mat-card>
+                </mat-grid-tile>
+            }
+        </mat-grid-list>
 
         <note-form-component (saved)='add($event)'></note-form-component>
 
         <h1>Your Reminders</h1>
 
-        @for (reminder of reminders(); track reminder.id) {
-            <div class="container">
-                <h3>{{ reminder.title }}</h3>
-                <h5>{{ reminder.category }}</h5>
-                <div>{{ reminder.date }}</div>
-                <div>{{ reminder.done }}</div>
-                @if (!reminder.done) {
-                    <button (click)="done(reminder.id)" class="done">done</button>
-                }
-                <button (click)="deleteReminder(reminder.id)">delete</button>
-            </div>
-        }
-        
-        <rem-form-component (saved)="addRem($event)" (attatch)="addRemToNote($event)"></rem-form-component>
+        <mat-grid-list cols="3" rowHeight="fit" [ngStyle]="applyRemContainerHeight()">
+            @for (reminder of reminders(); track reminder.id) {
+                <mat-grid-tile>
+                    <mat-card class="reminderItem card" appearance="outlined">
+                        <div class="header">
+                            <span class="title">{{ reminder.title }}</span>
+                            <mat-chip>{{ reminder.category }}</mat-chip>
+                            <span class="date">{{ reminder.date }}</span>
+                        </div>
+                        <div class="buttons buttonsRem">
+                            <button (click)="deleteReminder(reminder.id)" matButton="outlined">delete</button>
+                            @if (!reminder.done) {
+                                <button matButton="outlined" (click)="done(reminder.id)">done</button>
+                            }
+                            <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
+                        </div>
+                    </mat-card>
+                </mat-grid-tile>
+            }
+        </mat-grid-list>
+
+        <rem-form-component (saved)="addRem($event)" (attach)="addRemToNote($event)"></rem-form-component>
 
         <router-outlet/>
     `,
-    styles: [],
+    styles: `
+    `,
 })
 export class App implements OnDestroy {
-    protected readonly title = signal('todo-ui');
+    protected readonly title = signal('notes');
     protected readonly notes: Signal<Note[]>;
     protected readonly reminders: Signal<Reminder[]>;
 
@@ -137,11 +172,11 @@ export class App implements OnDestroy {
     private readonly updateSubjectRems = new Subject<RemMessage>()
 
     constructor(private readonly noteService: NoteService, private readonly reminderService: ReminderService) {
-        setTimeout(() => this.title.set("test"), 4000)
+        setTimeout(() => this.title.set("your notes"), 2000)
 
         const notes$ = this.noteService.getAll()
             .pipe(
-                switchMap(notes => this.updateSubjectNotes.pipe(scan(processNotes, notes), startWith(notes))),
+                switchMap(notes => (this.updateSubjectNotes.pipe(scan(processNotes, notes), startWith(notes)))),
             )
         this.notes = toSignal(notes$, {initialValue: []});
 
@@ -187,21 +222,18 @@ export class App implements OnDestroy {
     removeRemFromNote(id: number, rId: number) {
         this.noteService.removeReminder(id, rId)
         const original = this.notes().filter((note) => note.id == id)[0]
-        // const toRemove = original.reminders.filter((reminder) => reminder.id == rId)[0]
-        // this.updateSubjectNotes.next({type: 'DR', reminder: toRemove})
-        // this.updateSubjectRems.next({type: 'D', reminder: toRemove})
         const modified: Note = {
             id: original.id,
             name: original.name,
             description: original.description,
-            reminders: original.reminders.filter((r: Reminder)=> r.id != rId),
+            reminders: original.reminders.filter((r: Reminder) => r.id != rId),
             category: original.category,
         }
         this.updateSubjectNotes.next({type: 'E', note: modified})
     }
 
     addRemToNote(input: [number, string]) {
-        const original = this.notes().filter(note => note.name == input[1])[0]
+        const original = this.notes().filter(note => note.name.trim().toLowerCase() == input[1].trim().toLowerCase())[0]
         if (original != undefined) {
             const modified: Note = {
                 id: original.id,
@@ -210,6 +242,7 @@ export class App implements OnDestroy {
                 reminders: [...original.reminders, this.reminders().filter(r => r.id == input[0])[0]],
                 category: original.category,
             }
+            this.noteService.addReminder(modified.id, input[0])
             this.updateSubjectNotes.next({type: 'E', note: modified})
         }
     }
@@ -225,5 +258,17 @@ export class App implements OnDestroy {
 
     addRem(reminder: Reminder) {
         this.updateSubjectRems.next({type: 'C', reminder: reminder})
+    }
+
+    applyRemContainerHeight() {
+        return {'height': (Math.ceil(this.reminders().length / 3) * 11) + 'rem'};
+    }
+
+    applyNoteContainerHeight() {
+        try {
+            return {'height': (Math.ceil(this.notes().length / 3) * (16 + (8 * (this.notes().reduce(((acc, n, i, arr) => (n.reminders.length > acc.reminders.length) ? n : acc), this.notes().at(0)!)).reminders.length))) + 'rem'};
+        } catch (error) {
+            return {'height': (Math.ceil(this.notes().length / 3) * 16) + 'rem'};
+        }
     }
 }
