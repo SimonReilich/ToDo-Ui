@@ -25,7 +25,7 @@ export class ReminderService {
     }
 
     create(reminder: Reminder) {
-        return this.http.post('/api/reminders', {
+        return this.http.post<Reminder>('/api/reminders', {
             title: reminder.title,
             date: reminder.date,
             category: reminder.category,
@@ -42,6 +42,6 @@ export class ReminderService {
     }
 
     delete(id: number) {
-        this.http.delete('/api/reminders/' + id)
+        this.http.delete('/api/reminders/' + id).subscribe()
     }
 }

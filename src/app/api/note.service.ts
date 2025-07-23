@@ -47,6 +47,6 @@ export class NoteService {
   }
 
   delete(id: number) {
-    this.http.delete('/api/notes/' + id)
+    this.http.delete('/api/notes/' + id).subscribe()
   }
 }

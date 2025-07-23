@@ -4,7 +4,8 @@ import {Note, NoteService} from "./api/note.service";
 import {toSignal} from "@angular/core/rxjs-interop";
 import {NoteformComponent} from "./components/noteform.component";
 import {Reminder, ReminderService} from "./api/reminder.service";
-import {scan, Subject, switchMap} from "rxjs";
+import {scan, startWith, Subject, switchMap} from "rxjs";
+import {RemformComponent} from "./components/remform.component";
 
 interface NoteMessage {
     type: 'D' | 'C' | 'E' | 'ER' | 'DR';
@@ -28,13 +29,19 @@ function processNotes(state: Note[], msg: NoteMessage): Note[] {
             state[i] = msg.note!
             return state
         case 'ER':
-            return state.map<Note>((note: any) => {
-            if (note.reminder.find((r:any) => r.id == msg.reminder!.id)) {
+            return state.map((note: Note) => {
+            if (note.reminders.find((r: Reminder) => r.id == msg.reminder!.id)) {
                 return {
                     id: note.id,
                     name: note.name,
                     description: note.description,
-                    reminders: [...note.reminders.filter((r: any) => r.id != msg.reminder!.id), msg.reminder],
+                    reminders: note.reminders.map((r: Reminder) => {
+                        if (r.id == msg.reminder!.id) {
+                            return msg.reminder!;
+                        } else {
+                            return r;
+                        }
+                    }),
                     category: note.category,
                 }
             } else {
@@ -69,7 +76,7 @@ function processRems(state: Reminder[], msg: RemMessage): Reminder[] {
 
 @Component({
     selector: 'td-root',
-    imports: [RouterOutlet, NoteformComponent],
+    imports: [RouterOutlet, NoteformComponent, RemformComponent],
     template: `
         <h1>Welcome to {{ title() }}!</h1>
 
@@ -90,10 +97,11 @@ function processRems(state: Reminder[], msg: RemMessage): Reminder[] {
                             @if (!reminder.done) {
                                 <button (click)="done(reminder.id)" class="done">done</button>
                             }
-                            <button (click)="removeRem(note.id, reminder.id)">remove reminder</button>
+                            <button (click)="removeRemFromNote(note.id, reminder.id)">remove reminder</button>
                         </li>
                     }
                 </ul>
+                <button (click)="deleteNote(note.id)">delete</button>
             </div>
         }
 
@@ -110,8 +118,11 @@ function processRems(state: Reminder[], msg: RemMessage): Reminder[] {
                 @if (!reminder.done) {
                     <button (click)="done(reminder.id)" class="done">done</button>
                 }
+                <button (click)="deleteReminder(reminder.id)">delete</button>
             </div>
         }
+        
+        <rem-form-component (saved)="addRem($event)" (attatch)="addRemToNote($event)"></rem-form-component>
 
         <router-outlet/>
     `,
@@ -130,13 +141,13 @@ export class App implements OnDestroy {
 
         const notes$ = this.noteService.getAll()
             .pipe(
-                switchMap(notes => this.updateSubjectNotes.pipe(scan(processNotes, notes))),
+                switchMap(notes => this.updateSubjectNotes.pipe(scan(processNotes, notes), startWith(notes))),
             )
         this.notes = toSignal(notes$, {initialValue: []});
 
         const reminders$ = this.reminderService.getAll()
             .pipe(
-                switchMap(reminders => this.updateSubjectRems.pipe(scan(processRems, reminders))),
+                switchMap(reminders => this.updateSubjectRems.pipe(scan(processRems, reminders), startWith(reminders))),
             )
         this.reminders = toSignal(reminders$, {initialValue: []});
     }
@@ -160,19 +171,47 @@ export class App implements OnDestroy {
         this.updateSubjectRems.next({type: 'E', reminder: edited})
     }
 
-    removeRem(id: number, rId: number) {
+    deleteReminder(id: number) {
+        const reminder = this.reminders().filter(reminder => reminder.id == id)[0]
+        this.reminderService.delete(id)
+        this.updateSubjectNotes.next({type: 'DR', reminder: reminder})
+        this.updateSubjectRems.next({type: 'D', reminder: reminder})
+    }
+
+    deleteNote(id: number) {
+        const note = this.notes().filter(reminder => reminder.id == id)[0]
+        this.noteService.delete(id)
+        this.updateSubjectNotes.next({type: 'D', note: note})
+    }
+
+    removeRemFromNote(id: number, rId: number) {
         this.noteService.removeReminder(id, rId)
         const original = this.notes().filter((note) => note.id == id)[0]
-        const edited: Note = {
+        // const toRemove = original.reminders.filter((reminder) => reminder.id == rId)[0]
+        // this.updateSubjectNotes.next({type: 'DR', reminder: toRemove})
+        // this.updateSubjectRems.next({type: 'D', reminder: toRemove})
+        const modified: Note = {
             id: original.id,
             name: original.name,
             description: original.description,
-            reminders: original.reminders.filter((reminder) => reminder.id != rId),
-            category: original.category
+            reminders: original.reminders.filter((r: Reminder)=> r.id != rId),
+            category: original.category,
         }
-        const toRemove = original.reminders.filter((reminder) => reminder.id == rId)[0]
-        this.updateSubjectNotes.next({type: 'DR', reminder: toRemove})
-        this.updateSubjectRems.next({type: 'D', reminder: toRemove})
+        this.updateSubjectNotes.next({type: 'E', note: modified})
+    }
+
+    addRemToNote(input: [number, string]) {
+        const original = this.notes().filter(note => note.name == input[1])[0]
+        if (original != undefined) {
+            const modified: Note = {
+                id: original.id,
+                name: original.name,
+                description: original.description,
+                reminders: [...original.reminders, this.reminders().filter(r => r.id == input[0])[0]],
+                category: original.category,
+            }
+            this.updateSubjectNotes.next({type: 'E', note: modified})
+        }
     }
 
     add(note: Note) {
@@ -182,5 +221,9 @@ export class App implements OnDestroy {
                 this.updateSubjectRems.next({type: 'C', reminder: reminder})
             }
         })
+    }
+
+    addRem(reminder: Reminder) {
+        this.updateSubjectRems.next({type: 'C', reminder: reminder})
     }
 }
