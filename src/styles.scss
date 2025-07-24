@@ -122,7 +122,7 @@ h2 {
 }
 
 mat-grid-list {
-  margin-top: 2rem;
+  margin: 1rem;
 }
 
 .open {
@@ -130,10 +130,14 @@ mat-grid-list {
 
 note-form-component, reminder-form-component {
   position: fixed;
-  right: 1rem;
-  bottom: 2rem;
+  right: 4rem;
+  bottom: 4rem;
   z-index: 100000000;
+
+  button {
+    margin: 0;
+  }
 }
 
-html, body { padding-inline: 1rem;}
+html, body { padding-inline: 0;}
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

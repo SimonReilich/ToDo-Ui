@@ -16,6 +16,7 @@ import {NgStyle} from "@angular/common";
 import {NoteeditComponent} from "./components/noteedit.component";
 import {RemindereditComponent} from "./components/reminderedit.component";
 import {MatTab, MatTabGroup} from "@angular/material/tabs";
+import {MatToolbar} from "@angular/material/toolbar";
 
 interface NoteMessage {
     type: 'D' | 'C' | 'E' | 'ER' | 'DR' | 'L';
@@ -30,9 +31,12 @@ interface RemMessage {
 
 @Component({
     selector: 'td-root',
-    imports: [RouterOutlet, NoteformComponent, ReminderformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle, NoteeditComponent, RemindereditComponent, MatTabGroup, MatTab,],
+    imports: [RouterOutlet, NoteformComponent, ReminderformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle, NoteeditComponent, RemindereditComponent, MatTabGroup, MatTab, MatToolbar,],
     template: `
-        <h1>Welcome to {{ title() }}!</h1>
+        <mat-toolbar>
+            <span>Welcome to {{ title() }}</span>
+        </mat-toolbar>
+
 
         <mat-tab-group>
             <mat-tab label="Notes">
