@@ -16,83 +16,27 @@ import {MatCheckbox} from "@angular/material/checkbox";
 import {NgStyle} from "@angular/common";
 
 interface NoteMessage {
-    type: 'D' | 'C' | 'E' | 'ER' | 'DR';
+    type: 'D' | 'C' | 'E' | 'ER' | 'DR' | 'L';
     note?: Note;
     reminder?: Reminder;
 }
 
 interface RemMessage {
-    type: 'D' | 'C' | 'E';
-    reminder: Reminder;
-}
-
-function processNotes(state: Note[], msg: NoteMessage): Note[] {
-    switch (msg.type) {
-        case "C":
-            return [...state, msg.note!];
-        case 'D':
-            return state.filter((n) => n.id != msg.note!.id);
-        case 'E':
-            const i = state.findIndex((n) => n.id == msg.note!.id)
-            state[i] = msg.note!
-            return state
-        case 'ER':
-            return state.map((note: Note) => {
-                if (note.reminders.find((r: Reminder) => r.id == msg.reminder!.id)) {
-                    return {
-                        id: note.id,
-                        name: note.name,
-                        description: note.description,
-                        reminders: note.reminders.map((r: Reminder) => {
-                            if (r.id == msg.reminder!.id) {
-                                return msg.reminder!;
-                            } else {
-                                return r;
-                            }
-                        }),
-                        category: note.category,
-                    }
-                } else {
-                    return note
-                }
-            })
-        case 'DR':
-            return state.map((note) => {
-                return {
-                    id: note.id,
-                    name: note.name,
-                    description: note.description,
-                    reminders: note.reminders.filter((r) => r.id != msg.reminder!.id),
-                    category: note.category,
-                }
-            })
-    }
-}
-
-function processRems(state: Reminder[], msg: RemMessage): Reminder[] {
-    switch (msg.type) {
-        case "D":
-            return state.filter((r) => r.id != msg.reminder.id);
-        case "E":
-            const i = state.findIndex((r) => r.id == msg.reminder.id)
-            state[i] = msg.reminder;
-            return state
-        case 'C':
-            return [...state, msg.reminder];
-    }
+    type: 'D' | 'C' | 'E' | 'L';
+    reminder?: Reminder;
 }
 
 @Component({
     selector: 'td-root',
     imports: [RouterOutlet, NoteformComponent, RemformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatToolbar, MatChip, MatDivider, MatCheckbox, NgStyle],
     template: `
-        <mat-toolbar>
-            <span>Welcome to {{ title() }}!</span>
-        </mat-toolbar>
+        <h1>Welcome to {{ title() }}!</h1>
 
-        <h1>Your Notes</h1>
+        <mat-divider></mat-divider>
 
-        <mat-grid-list cols="3" rowHeight="fit" [ngStyle]="applyNoteContainerHeight()">
+        <h2>Your Notes</h2>
+
+        <mat-grid-list [cols]="calculateCols()" rowHeight="fit" [ngStyle]="applyNoteContainerHeight()">
             @for (note of notes(); track note.id) {
                 <mat-grid-tile>
                     <mat-card appearance="outlined" class="card">
@@ -131,11 +75,13 @@ function processRems(state: Reminder[], msg: RemMessage): Reminder[] {
             }
         </mat-grid-list>
 
-        <note-form-component (saved)='add($event)'></note-form-component>
+        <note-form-component (refresh)='refresh()'></note-form-component>
 
-        <h1>Your Reminders</h1>
+        <mat-divider></mat-divider>
 
-        <mat-grid-list cols="3" rowHeight="fit" [ngStyle]="applyRemContainerHeight()">
+        <h2>Your Reminders</h2>
+
+        <mat-grid-list [cols]="calculateCols()" rowHeight="fit" [ngStyle]="applyRemContainerHeight()">
             @for (reminder of reminders(); track reminder.id) {
                 <mat-grid-tile>
                     <mat-card class="reminderItem card" appearance="outlined">
@@ -156,7 +102,7 @@ function processRems(state: Reminder[], msg: RemMessage): Reminder[] {
             }
         </mat-grid-list>
 
-        <rem-form-component (saved)="addRem($event)" (attach)="addRemToNote($event)"></rem-form-component>
+        <rem-form-component (refresh)="refreshReminders()"></rem-form-component>
 
         <router-outlet/>
     `,
@@ -168,21 +114,27 @@ export class App implements OnDestroy {
     protected readonly notes: Signal<Note[]>;
     protected readonly reminders: Signal<Reminder[]>;
 
+    protected readonly noteService: NoteService;
+    protected readonly reminderService: ReminderService;
+
     private readonly updateSubjectNotes = new Subject<NoteMessage>()
     private readonly updateSubjectRems = new Subject<RemMessage>()
 
-    constructor(private readonly noteService: NoteService, private readonly reminderService: ReminderService) {
+    constructor(protected readonly nService: NoteService, protected readonly rService: ReminderService) {
+        this.noteService = nService;
+        this.reminderService = rService;
+
         setTimeout(() => this.title.set("your notes"), 2000)
 
         const notes$ = this.noteService.getAll()
             .pipe(
-                switchMap(notes => (this.updateSubjectNotes.pipe(scan(processNotes, notes), startWith(notes)))),
+                switchMap(notes => (this.updateSubjectNotes.pipe(scan((acc, n) => this.processNotes(this, acc, n), notes), startWith(notes)))),
             )
         this.notes = toSignal(notes$, {initialValue: []});
 
         const reminders$ = this.reminderService.getAll()
             .pipe(
-                switchMap(reminders => this.updateSubjectRems.pipe(scan(processRems, reminders), startWith(reminders))),
+                switchMap(reminders => this.updateSubjectRems.pipe(scan((acc, r) => this.processRems(this, acc, r), reminders), startWith(reminders))),
             )
         this.reminders = toSignal(reminders$, {initialValue: []});
     }
@@ -270,5 +222,81 @@ export class App implements OnDestroy {
         } catch (error) {
             return {'height': (Math.ceil(this.notes().length / 3) * 16) + 'rem'};
         }
+    }
+
+    refresh() {
+        this.updateSubjectNotes.next({type: 'L'})
+    }
+
+    refreshReminders() {
+        this.updateSubjectRems.next({type: "L"})
+        const self = this
+        setTimeout(() => self.updateSubjectNotes.next({type: 'L'}), 500)
+    }
+
+    processNotes(self: App, state: Note[], msg: NoteMessage): Note[] {
+        switch (msg.type) {
+            case "C":
+                return [...state, msg.note!];
+            case 'D':
+                return state.filter((n) => n.id != msg.note!.id);
+            case 'E':
+                const i = state.findIndex((n) => n.id == msg.note!.id)
+                state[i] = msg.note!
+                return state
+            case 'ER':
+                return state.map((note: Note) => {
+                    if (note.reminders.find((r: Reminder) => r.id == msg.reminder!.id)) {
+                        return {
+                            id: note.id,
+                            name: note.name,
+                            description: note.description,
+                            reminders: note.reminders.map((r: Reminder) => {
+                                if (r.id == msg.reminder!.id) {
+                                    return msg.reminder!;
+                                } else {
+                                    return r;
+                                }
+                            }),
+                            category: note.category,
+                        }
+                    } else {
+                        return note
+                    }
+                })
+            case 'DR':
+                return state.map((note) => {
+                    return {
+                        id: note.id,
+                        name: note.name,
+                        description: note.description,
+                        reminders: note.reminders.filter((r) => r.id != msg.reminder!.id),
+                        category: note.category,
+                    }
+                })
+            case 'L':
+                self.noteService.getAll().subscribe(notes => notes.forEach(n => self.updateSubjectNotes.next({type: 'C', note: n})))
+                return []
+        }
+    }
+
+    processRems(self: App, state: Reminder[], msg: RemMessage): Reminder[] {
+        switch (msg.type) {
+            case "D":
+                return state.filter((r) => r.id != msg.reminder!.id);
+            case "E":
+                const i = state.findIndex((r) => r.id == msg.reminder!.id)
+                state[i] = msg.reminder!;
+                return state
+            case 'C':
+                return [...state, msg.reminder!];
+            case 'L':
+                self.reminderService.getAll().subscribe(reminders => reminders.forEach(r => self.updateSubjectRems.next({type: 'C', reminder: r})))
+                return []
+        }
+    }
+
+    calculateCols() {
+        return Math.floor(window.innerWidth / 400)
     }
 }

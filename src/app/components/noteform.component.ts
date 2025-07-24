@@ -15,22 +15,24 @@ import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet"
         MatButton,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined">add</button>
+        <button (click)="openBottomSheet()" matButton="outlined" class="open">add</button>
     `,
-    styles: ``
+    styles: `
+      .open {
+        margin-bottom: 2rem;
+      }
+    `
 })
 export class NoteformComponent {
 
-    saved = output<Note>();
+    refresh = output<void>();
 
     private _bottomSheet = inject(MatBottomSheet);
 
     openBottomSheet(): void {
-        this._bottomSheet.open(BottomSheetOverviewExampleSheet);
-    }
-
-    add(note: Note) {
-        this.saved.emit(note)
+        this._bottomSheet.open(CreateNoteSheet).afterDismissed().subscribe(_ => {
+            this.refresh.emit()
+        });
     }
 }
 
@@ -58,13 +60,12 @@ export class NoteformComponent {
     imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel],
 })
 
-export class BottomSheetOverviewExampleSheet {
-    saved = output<Note>();
+export class CreateNoteSheet {
     title = new FormControl('');
     desc = new FormControl('');
     imp = new FormControl('ToDo');
     private _bottomSheetRef =
-        inject<MatBottomSheetRef<BottomSheetOverviewExampleSheet>>(MatBottomSheetRef);
+        inject<MatBottomSheetRef<CreateNoteSheet>>(MatBottomSheetRef);
 
     constructor(private noteService: NoteService) {
     }
@@ -81,7 +82,7 @@ export class BottomSheetOverviewExampleSheet {
             description: this.desc.value,
             reminders: [],
             category: this.imp.value,
-        }).subscribe(note => this.saved.emit(note));
+        }).subscribe();
         this._bottomSheetRef.dismiss();
     }
 }
