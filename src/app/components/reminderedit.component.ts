@@ -9,7 +9,7 @@ import {MatTimepicker, MatTimepickerInput, MatTimepickerToggle} from "@angular/m
 import {provideNativeDateAdapter} from "@angular/material/core";
 import {MatListModule} from "@angular/material/list";
 import {MAT_BOTTOM_SHEET_DATA, MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
-import {NoteService} from "../api/note.service";
+import {Note, NoteService} from "../api/note.service";
 
 @Component({
     selector: 'reminder-edit-component',
@@ -75,7 +75,12 @@ export class RemindereditComponent {
             </mat-form-field>
             <mat-form-field>
                 <mat-label>Note (optional)</mat-label>
-                <input matInput type="text" id="note" [formControl]="note">
+                <mat-select [formControl]="note">
+                    <mat-option value="">none</mat-option>
+                    @for (note of notes; track note.id) {
+                        <mat-option [value]="note.name">{{ note.name }}</mat-option>
+                    }
+                </mat-select>
             </mat-form-field>
         </form>
         <button (click)="edit()" matButton="outlined" class="formButton">confirm</button>`,
@@ -88,10 +93,13 @@ export class CreateReminderSheet {
     imp = new FormControl('ToDo');
     note = new FormControl('');
     value: Date = new Date();
+    notes: Note[] = [];
+
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateReminderSheet>>(MatBottomSheetRef);
 
     constructor(private reminderService: ReminderService, private noteService: NoteService, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {id: number}) {
+        this.noteService.getAll().subscribe(notes => this.notes = notes);
         const self = this
         reminderService.get(data.id).subscribe(reminder => {
             self.title = new FormControl(reminder.title);
@@ -117,6 +125,8 @@ export class CreateReminderSheet {
             this.noteService.getAll().subscribe(notes => notes.forEach(note => {
                 if (this.note.value != undefined && note.name.trim().toLowerCase() === this.note.value.toLowerCase()) {
                     this.noteService.addReminder(note.id, this.data.id)
+                } else {
+                    this.noteService.removeReminder(note.id, this.data.id)
                 }
             }))
             this._bottomSheetRef.dismiss()

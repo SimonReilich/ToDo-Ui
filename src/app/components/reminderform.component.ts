@@ -9,7 +9,7 @@ import {MatTimepicker, MatTimepickerInput, MatTimepickerToggle} from "@angular/m
 import {provideNativeDateAdapter} from "@angular/material/core";
 import {MatListModule} from "@angular/material/list";
 import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
-import {NoteService} from "../api/note.service";
+import {Note, NoteService} from "../api/note.service";
 
 @Component({
     selector: 'reminder-form-component',
@@ -76,7 +76,11 @@ export class ReminderformComponent {
             </mat-form-field>
             <mat-form-field>
                 <mat-label>Note (optional)</mat-label>
-                <input matInput type="text" id="note" [formControl]="note">
+                <mat-select [formControl]="note">
+                    @for (note of notes; track note.id) {
+                        <mat-option [value]="note.name">{{ note.name }}</mat-option>
+                    }
+                </mat-select>
             </mat-form-field>
         </form>
         <button (click)="add()" matButton="outlined" class="formButton">create</button>`,
@@ -89,10 +93,13 @@ export class CreateReminderSheet {
     imp = new FormControl('ToDo');
     note = new FormControl('');
     value: Date = new Date();
+    notes: Note[] = [];
+
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateReminderSheet>>(MatBottomSheetRef);
 
     constructor(private reminderService: ReminderService, private noteService: NoteService) {
+        this.noteService.getAll().subscribe(notes => this.notes = notes);
     }
 
     add() {
