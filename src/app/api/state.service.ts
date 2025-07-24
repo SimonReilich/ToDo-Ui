@@ -22,7 +22,7 @@ export class StateService {
     public static readonly notes: WritableSignal<Note[]> = signal([])
     public static readonly reminders: WritableSignal<Reminder[]> = signal([])
     public static readonly working: WritableSignal<boolean> = signal(false)
-    public static readonly delay: number = 0
+    public static readonly delay: number = 10_000
     protected readonly noteService: NoteService;
     protected readonly reminderService: ReminderService;
 
@@ -40,20 +40,14 @@ export class StateService {
     }
 
     async updateNotes() {
-        await waitUntil(() => !StateService.working());
-        StateService.working.update(_ => true)
         this.noteService.getAll().subscribe(notes => {
             StateService.notes.update(_ => notes)
-            StateService.working.update(_ => false)
         })
     }
 
     async updateReminders() {
-        await waitUntil(() => !StateService.working());
-        StateService.working.update(_ => true)
         this.reminderService.getAll().subscribe(reminders => {
             StateService.reminders.update(_ => reminders)
-            StateService.working.update(_ => false)
         })
         await this.updateNotes()
     }

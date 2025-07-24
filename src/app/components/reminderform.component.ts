@@ -25,7 +25,7 @@ import {StateService} from "../api/state.service";
         MatIconModule,
     ],
     template: `
-        <button (click)="openBottomSheet()" matFab class="open"><mat-icon fontIcon="add"></mat-icon></button>
+        <button (click)="openBottomSheet()" matFab class="open" [disabled]="StateService.working()"><mat-icon fontIcon="add"></mat-icon></button>
     `,
     styles: `
     `
@@ -37,6 +37,8 @@ export class ReminderformComponent {
     openBottomSheet(): void {
         this._bottomSheet.open(CreateReminderSheet)
     }
+
+    protected readonly StateService = StateService;
 }
 
 @Component({

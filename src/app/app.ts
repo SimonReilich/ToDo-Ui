@@ -64,10 +64,10 @@ interface RemMessage {
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
                                             <div class="buttons">
-                                                <button (click)="stateService.removeReminder(note.id, reminder.id)" matButton>remove
+                                                <button (click)="stateService.removeReminder(note.id, reminder.id)" matButton [disabled]="StateService.working()">remove
                                                 </button>
                                                 @if (!reminder.done) {
-                                                    <button matButton (click)="stateService.completeReminder(reminder.id)">done</button>
+                                                    <button matButton (click)="stateService.completeReminder(reminder.id)" [disabled]="StateService.working()">done</button>
                                                 }
                                                 <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
                                             </div>
@@ -77,7 +77,7 @@ interface RemMessage {
                                 <mat-divider></mat-divider>
                                 <mat-card-actions>
                                     <note-edit-component [id]="note.id" (refresh)="stateService.updateNotes()"></note-edit-component>
-                                    <button matButton="outlined" (click)="stateService.deleteNote(note.id)">delete</button>
+                                    <button matButton="outlined" (click)="stateService.deleteNote(note.id)" [disabled]="StateService.working()">delete</button>
                                 </mat-card-actions>
                             </mat-card>
                         </mat-grid-tile>
@@ -101,9 +101,9 @@ interface RemMessage {
                                 </div>
                                 <div class="buttons buttonsRem">
                                     <reminder-edit-component [id]="reminder.id"></reminder-edit-component>
-                                    <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined">delete</button>
+                                    <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined" [disabled]="StateService.working()">delete</button>
                                     @if (!reminder.done) {
-                                        <button matButton="outlined" (click)="stateService.completeReminder(reminder.id)">done</button>
+                                        <button matButton="outlined" (click)="stateService.completeReminder(reminder.id)" [disabled]="StateService.working()">done</button>
                                     }
                                     <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
                                 </div>

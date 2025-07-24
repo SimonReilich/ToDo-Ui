@@ -12,6 +12,7 @@ import {MAT_BOTTOM_SHEET_DATA, MatBottomSheet, MatBottomSheetRef} from "@angular
 import {Note, NoteService} from "../api/note.service";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
 import {StateService} from "../api/state.service";
+import {MatIcon} from "@angular/material/icon";
 
 @Component({
     selector: 'reminder-edit-component',
@@ -22,7 +23,7 @@ import {StateService} from "../api/state.service";
         FormsModule,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined">edit</button>
+        <button (click)="openBottomSheet()" matButton="outlined" [disabled]="StateService.working()">edit</button>
     `,
     styles: `
     `
@@ -36,6 +37,8 @@ export class RemindereditComponent {
     openBottomSheet(): void {
         this._bottomSheet.open(CreateReminderSheet, {data: {id: this.id()}})
     }
+
+    protected readonly StateService = StateService;
 }
 
 @Component({

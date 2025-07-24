@@ -17,7 +17,7 @@ import {StateService} from "../api/state.service";
         MatButton,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined">edit</button>
+        <button (click)="openBottomSheet()" matButton="outlined" [disabled]="StateService.working()">edit</button>
     `,
     styles: `
     `
@@ -37,6 +37,8 @@ export class NoteeditComponent {
             this.refresh.emit(this.id())
         });
     }
+
+    protected readonly StateService = StateService;
 }
 
 @Component({
