@@ -47,12 +47,12 @@ export class ReminderformComponent {
         <form>
             <mat-form-field>
                 <mat-label>title</mat-label>
-                <input matInput type="text" id="title" [formControl]="title">
+                <input matInput type="text" id="title" [formControl]="title" required>
             </mat-form-field>
 
             <mat-form-field>
                 <mat-label>date</mat-label>
-                <input matInput [matDatepicker]="picker" [(ngModel)]="value" [ngModelOptions]="{standalone: true}">
+                <input matInput [matDatepicker]="picker" [(ngModel)]="value" [ngModelOptions]="{standalone: true}" required>
                 <mat-datepicker-toggle [for]="picker" matSuffix/>
                 <mat-datepicker #picker></mat-datepicker>
             </mat-form-field>
@@ -62,7 +62,7 @@ export class ReminderformComponent {
                 <input matInput
                        [matTimepicker]="timepicker"
                        [(ngModel)]="value"
-                       [ngModelOptions]="{updateOn: 'blur', standalone: true}">
+                       [ngModelOptions]="{updateOn: 'blur', standalone: true}" required>
                 <mat-timepicker #timepicker/>
                 <mat-timepicker-toggle [for]="timepicker" matSuffix/>
             </mat-form-field>

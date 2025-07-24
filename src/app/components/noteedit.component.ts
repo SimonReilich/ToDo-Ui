@@ -43,11 +43,11 @@ export class NoteeditComponent {
         <form>
             <mat-form-field>
                 <mat-label>title</mat-label>
-                <input matInput type="text" id="title" [formControl]="title">
+                <input matInput type="text" id="title" [formControl]="title" required>
             </mat-form-field>
             <mat-form-field>
                 <mat-label>description</mat-label>
-                <textarea matInput type="text" id="desc" [formControl]="desc"></textarea>
+                <textarea matInput type="text" id="desc" [formControl]="desc" required></textarea>
             </mat-form-field>
             <mat-form-field>
                 <mat-label>category</mat-label>

@@ -10,7 +10,6 @@ import {MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle} fr
 import {MatButton} from "@angular/material/button";
 import {MatGridList, MatGridTile} from "@angular/material/grid-list";
 import {MatDivider} from "@angular/material/list";
-import {MatToolbar} from "@angular/material/toolbar";
 import {MatChip} from "@angular/material/chips";
 import {MatCheckbox} from "@angular/material/checkbox";
 import {NgStyle} from "@angular/common";
@@ -94,7 +93,8 @@ interface RemMessage {
                             <span class="date">{{ reminder.date }}</span>
                         </div>
                         <div class="buttons buttonsRem">
-                            <reminder-edit-component [id]="reminder.id" (refresh)="refreshSingleReminder($event)"></reminder-edit-component>
+                            <reminder-edit-component [id]="reminder.id"
+                                                     (refresh)="refreshSingleReminder($event)"></reminder-edit-component>
                             <button (click)="deleteReminder(reminder.id)" matButton="outlined">delete</button>
                             @if (!reminder.done) {
                                 <button matButton="outlined" (click)="done(reminder.id)">done</button>
@@ -120,11 +120,9 @@ export class App implements OnDestroy {
 
     protected readonly noteService: NoteService;
     protected readonly reminderService: ReminderService;
-
+    protected readonly cols = signal(3);
     private readonly updateSubjectNotes = new Subject<NoteMessage>()
     private readonly updateSubjectRems = new Subject<RemMessage>()
-
-    protected readonly cols = signal(3);
 
     constructor(protected readonly nService: NoteService, protected readonly rService: ReminderService) {
         this.noteService = nService;
@@ -276,7 +274,10 @@ export class App implements OnDestroy {
                     }
                 })
             case 'L':
-                self.noteService.getAll().subscribe(notes => notes.forEach(n => self.updateSubjectNotes.next({type: 'C', note: n})))
+                self.noteService.getAll().subscribe(notes => notes.forEach(n => self.updateSubjectNotes.next({
+                    type: 'C',
+                    note: n
+                })))
                 return []
         }
     }
@@ -296,7 +297,10 @@ export class App implements OnDestroy {
             case 'C':
                 return [...state, msg.reminder!];
             case 'L':
-                self.reminderService.getAll().subscribe(reminders => reminders.forEach(r => self.updateSubjectRems.next({type: 'C', reminder: r})))
+                self.reminderService.getAll().subscribe(reminders => reminders.forEach(r => self.updateSubjectRems.next({
+                    type: 'C',
+                    reminder: r
+                })))
                 return []
         }
     }
