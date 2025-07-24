@@ -34,7 +34,7 @@ export class ReminderService {
     }
 
     update(reminder: Reminder) {
-        this.http.put('/api/reminders/' + reminder.id, reminder).subscribe()
+        return this.http.put('/api/reminders/' + reminder.id, reminder)
     }
 
     complete(id: number) {

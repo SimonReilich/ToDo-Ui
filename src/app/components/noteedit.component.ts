@@ -1,4 +1,4 @@
-import {Component, inject, output} from '@angular/core';
+import {Component, Inject, inject, input, output} from '@angular/core';
 import {Note, NoteService} from "../api/note.service";
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {MatButton} from "@angular/material/button";
@@ -6,32 +6,33 @@ import {MatFormField, MatInput} from "@angular/material/input";
 import {MatLabel} from "@angular/material/form-field";
 import {MatOption, MatSelect} from "@angular/material/select";
 import {MatListModule} from "@angular/material/list";
-import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
+import {MAT_BOTTOM_SHEET_DATA, MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
 
 @Component({
-    selector: 'note-form-component',
+    selector: 'note-edit-component',
     imports: [
         ReactiveFormsModule,
         MatButton,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined" class="open">add</button>
+        <button (click)="openBottomSheet()" matButton="outlined" class="open">edit</button>
     `,
     styles: `
-      .open {
-        margin-bottom: 2rem;
-      }
     `
 })
-export class NoteformComponent {
+export class NoteeditComponent {
 
-    refresh = output<void>();
+    refresh = output<number>();
 
     private _bottomSheet = inject(MatBottomSheet);
 
+    id = input.required<number>()
+
     openBottomSheet(): void {
-        this._bottomSheet.open(CreateNoteSheet).afterDismissed().subscribe(_ => {
-            this.refresh.emit()
+        const ref = this._bottomSheet.open(CreateNoteSheet, {data: { id: this.id() }});
+
+        ref.afterDismissed().subscribe(_ => {
+            this.refresh.emit(this.id())
         });
     }
 }
@@ -56,7 +57,7 @@ export class NoteformComponent {
                 </mat-select>
             </mat-form-field>
         </form>
-        <button (click)="add()" matButton="outlined" class="formButton">create</button>`,
+        <button (click)="edit()" matButton="outlined" class="formButton">confirm</button>`,
     imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel],
 })
 
@@ -64,20 +65,27 @@ export class CreateNoteSheet {
     title = new FormControl('');
     desc = new FormControl('');
     imp = new FormControl('ToDo');
+
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateNoteSheet>>(MatBottomSheetRef);
 
-    constructor(private noteService: NoteService) {
+    constructor(private noteService: NoteService, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {id: number}) {
+        const self = this
+        noteService.get(data.id).subscribe(note => {
+            self.title = new FormControl(note.name)
+            self.desc = new FormControl(note.description)
+            self.imp = new FormControl(note.category)
+        })
     }
 
-    add() {
-        const self = this
-        this.noteService.create(<Note>{
-            id: 0,
+    edit() {
+        const self = this;
+        this.noteService.update(<Note>{
+            id: this.data.id,
             name: this.title.value,
             description: this.desc.value,
             reminders: [],
             category: this.imp.value,
-        }).subscribe(_ => self._bottomSheetRef.dismiss())
+        }).subscribe(_ => self._bottomSheetRef.dismiss());
     }
 }

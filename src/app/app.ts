@@ -5,7 +5,7 @@ import {toSignal} from "@angular/core/rxjs-interop";
 import {NoteformComponent} from "./components/noteform.component";
 import {Reminder, ReminderService} from "./api/reminder.service";
 import {scan, startWith, Subject, switchMap} from "rxjs";
-import {RemformComponent} from "./components/remform.component";
+import {ReminderformComponent} from "./components/reminderform.component";
 import {MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle} from "@angular/material/card";
 import {MatButton} from "@angular/material/button";
 import {MatGridList, MatGridTile} from "@angular/material/grid-list";
@@ -14,6 +14,8 @@ import {MatToolbar} from "@angular/material/toolbar";
 import {MatChip} from "@angular/material/chips";
 import {MatCheckbox} from "@angular/material/checkbox";
 import {NgStyle} from "@angular/common";
+import {NoteeditComponent} from "./components/noteedit.component";
+import {RemindereditComponent} from "./components/reminderedit.component";
 
 interface NoteMessage {
     type: 'D' | 'C' | 'E' | 'ER' | 'DR' | 'L';
@@ -28,7 +30,7 @@ interface RemMessage {
 
 @Component({
     selector: 'td-root',
-    imports: [RouterOutlet, NoteformComponent, RemformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle],
+    imports: [RouterOutlet, NoteformComponent, ReminderformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle, NoteeditComponent, RemindereditComponent],
     template: `
         <h1>Welcome to {{ title() }}!</h1>
 
@@ -68,6 +70,7 @@ interface RemMessage {
                         </mat-card-content>
                         <mat-divider></mat-divider>
                         <mat-card-actions>
+                            <note-edit-component [id]="note.id" (refresh)="refreshSingle($event)"></note-edit-component>
                             <button matButton="outlined" (click)="deleteNote(note.id)">delete</button>
                         </mat-card-actions>
                     </mat-card>
@@ -91,6 +94,7 @@ interface RemMessage {
                             <span class="date">{{ reminder.date }}</span>
                         </div>
                         <div class="buttons buttonsRem">
+                            <reminder-edit-component [id]="reminder.id" (refresh)="refreshSingleReminder($event)"></reminder-edit-component>
                             <button (click)="deleteReminder(reminder.id)" matButton="outlined">delete</button>
                             @if (!reminder.done) {
                                 <button matButton="outlined" (click)="done(reminder.id)">done</button>
@@ -102,7 +106,7 @@ interface RemMessage {
             }
         </mat-grid-list>
 
-        <rem-form-component (refresh)="refreshReminders()"></rem-form-component>
+        <reminder-form-component (refresh)="refreshReminders()"></reminder-form-component>
 
         <router-outlet/>
     `,
@@ -202,8 +206,20 @@ export class App implements OnDestroy {
 
     refreshReminders() {
         this.updateSubjectRems.next({type: "L"})
-        const self = this
-        setTimeout(() => self.updateSubjectNotes.next({type: 'L'}), 500)
+        this.updateSubjectNotes.next({type: 'L'})
+    }
+
+    refreshSingle(id: number) {
+        this.noteService.get(id).subscribe(note => {
+            this.updateSubjectNotes.next({type: 'E', note: note})
+        })
+    }
+
+    refreshSingleReminder(id: number) {
+        this.reminderService.get(id).subscribe(reminder => {
+            this.updateSubjectRems.next({type: 'E', reminder: reminder})
+        })
+        this.refresh()
     }
 
     processNotes(self: App, state: Note[], msg: NoteMessage): Note[] {
@@ -213,9 +229,7 @@ export class App implements OnDestroy {
             case 'D':
                 return state.filter((n) => n.id != msg.note!.id);
             case 'E':
-                const i = state.findIndex((n) => n.id == msg.note!.id)
-                state[i] = msg.note!
-                return state
+                return [msg.note!, ...state.filter((n) => n.id != msg.note!.id)];
             case 'ER':
                 return state.map((note: Note) => {
                     if (note.reminders.find((r: Reminder) => r.id == msg.reminder!.id)) {

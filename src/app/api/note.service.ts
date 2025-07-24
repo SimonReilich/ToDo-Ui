@@ -35,7 +35,7 @@ export class NoteService {
   }
 
   update(note: Note) {
-    this.http.put('/api/notes/' + note.id, note).subscribe()
+    return this.http.put('/api/notes/' + note.id, note)
   }
 
   addReminder(id: number, rId: number) {

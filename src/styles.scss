@@ -94,7 +94,7 @@ mat-chip {
   }
 
   p {
-    margin-block: 0rem;
+    margin-block: 0;
     padding-block-end: 1.5rem;
   }
 }
@@ -121,5 +121,5 @@ h2 {
   margin-left: 1rem;
 }
 
-html, body { height: 100%; padding-inline: 1rem;}
+html, body { padding-inline: 1rem;}
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

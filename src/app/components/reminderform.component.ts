@@ -12,7 +12,7 @@ import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet"
 import {NoteService} from "../api/note.service";
 
 @Component({
-    selector: 'rem-form-component',
+    selector: 'reminder-form-component',
     providers: [provideNativeDateAdapter()],
     imports: [
         ReactiveFormsModule,
@@ -28,7 +28,7 @@ import {NoteService} from "../api/note.service";
     }
     `
 })
-export class RemformComponent {
+export class ReminderformComponent {
 
     refresh = output<void>();
 
@@ -107,7 +107,7 @@ export class CreateReminderSheet {
                     this.noteService.addReminder(note.id, r.id)
                 }
             }))
+            this._bottomSheetRef.dismiss()
         });
-        this._bottomSheetRef.dismiss();
     }
 }
