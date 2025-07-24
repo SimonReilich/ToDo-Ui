@@ -1,4 +1,4 @@
-import {Component, HostListener, OnDestroy, Signal, signal} from '@angular/core';
+import {Component, computed, HostListener, OnDestroy, Signal, signal} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {Note, NoteService} from "./api/note.service";
 import {toSignal} from "@angular/core/rxjs-interop";
@@ -15,6 +15,7 @@ import {MatCheckbox} from "@angular/material/checkbox";
 import {NgStyle} from "@angular/common";
 import {NoteeditComponent} from "./components/noteedit.component";
 import {RemindereditComponent} from "./components/reminderedit.component";
+import {MatTab, MatTabGroup} from "@angular/material/tabs";
 
 interface NoteMessage {
     type: 'D' | 'C' | 'E' | 'ER' | 'DR' | 'L';
@@ -29,84 +30,84 @@ interface RemMessage {
 
 @Component({
     selector: 'td-root',
-    imports: [RouterOutlet, NoteformComponent, ReminderformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle, NoteeditComponent, RemindereditComponent],
+    imports: [RouterOutlet, NoteformComponent, ReminderformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle, NoteeditComponent, RemindereditComponent, MatTabGroup, MatTab,],
     template: `
         <h1>Welcome to {{ title() }}!</h1>
 
-        <mat-divider></mat-divider>
-
-        <h2>Your Notes</h2>
-
-        <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="applyNoteContainerHeight()">
-            @for (note of notes(); track note.id) {
-                <mat-grid-tile>
-                    <mat-card appearance="outlined" class="card">
-                        <mat-card-header>
-                            <mat-card-title>{{ note.name }}</mat-card-title>
-                            <mat-chip>{{ note.category }}</mat-chip>
-                        </mat-card-header>
-                        <mat-divider></mat-divider>
-                        <mat-card-content>
-                            <p class="desc">{{ note.description }}</p>
-                            @for (reminder of note.reminders; track reminder.id) {
+        <mat-tab-group>
+            <mat-tab label="Notes">
+                <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="noteHeight()">
+                    @for (note of notes(); track note.id) {
+                        <mat-grid-tile>
+                            <mat-card appearance="outlined" class="card">
+                                <mat-card-header>
+                                    <mat-card-title>{{ note.name }}</mat-card-title>
+                                    <mat-chip>{{ note.category }}</mat-chip>
+                                </mat-card-header>
                                 <mat-divider></mat-divider>
-                                <div class="reminderItem">
-                                    <div class="header">
-                                        <span>{{ reminder.title }}</span>
-                                        <mat-chip>{{ reminder.category }}</mat-chip>
-                                        <span class="date">{{ reminder.date }}</span>
-                                    </div>
-                                    <div class="buttons">
-                                        <button (click)="removeRemFromNote(note.id, reminder.id)" matButton>remove
-                                        </button>
-                                        @if (!reminder.done) {
-                                            <button matButton (click)="done(reminder.id)">done</button>
-                                        }
-                                        <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
-                                    </div>
+                                <mat-card-content>
+                                    <p class="desc">{{ note.description }}</p>
+                                    @for (reminder of note.reminders; track reminder.id) {
+                                        <mat-divider></mat-divider>
+                                        <div class="reminderItem">
+                                            <div class="header">
+                                                <span>{{ reminder.title }}</span>
+                                                <mat-chip>{{ reminder.category }}</mat-chip>
+                                                <span class="date">{{ reminder.date }}</span>
+                                            </div>
+                                            <div class="buttons">
+                                                <button (click)="removeRemFromNote(note.id, reminder.id)" matButton>remove
+                                                </button>
+                                                @if (!reminder.done) {
+                                                    <button matButton (click)="done(reminder.id)">done</button>
+                                                }
+                                                <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
+                                            </div>
+                                        </div>
+                                    }
+                                </mat-card-content>
+                                <mat-divider></mat-divider>
+                                <mat-card-actions>
+                                    <note-edit-component [id]="note.id" (refresh)="refreshSingle($event)"></note-edit-component>
+                                    <button matButton="outlined" (click)="deleteNote(note.id)">delete</button>
+                                </mat-card-actions>
+                            </mat-card>
+                        </mat-grid-tile>
+                    }
+                </mat-grid-list>
+
+                <note-form-component (refresh)='refresh()'></note-form-component>
+
+            </mat-tab>
+            <mat-tab label="Reminders">
+
+
+                <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="reminderHeight()">
+                    @for (reminder of reminders(); track reminder.id) {
+                        <mat-grid-tile>
+                            <mat-card class="reminderItem card" appearance="outlined">
+                                <div class="header">
+                                    <span class="title">{{ reminder.title }}</span>
+                                    <mat-chip>{{ reminder.category }}</mat-chip>
+                                    <span class="date">{{ reminder.date }}</span>
                                 </div>
-                            }
-                        </mat-card-content>
-                        <mat-divider></mat-divider>
-                        <mat-card-actions>
-                            <note-edit-component [id]="note.id" (refresh)="refreshSingle($event)"></note-edit-component>
-                            <button matButton="outlined" (click)="deleteNote(note.id)">delete</button>
-                        </mat-card-actions>
-                    </mat-card>
-                </mat-grid-tile>
-            }
-        </mat-grid-list>
+                                <div class="buttons buttonsRem">
+                                    <reminder-edit-component [id]="reminder.id"
+                                                             (refresh)="refreshSingleReminder($event)"></reminder-edit-component>
+                                    <button (click)="deleteReminder(reminder.id)" matButton="outlined">delete</button>
+                                    @if (!reminder.done) {
+                                        <button matButton="outlined" (click)="done(reminder.id)">done</button>
+                                    }
+                                    <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
+                                </div>
+                            </mat-card>
+                        </mat-grid-tile>
+                    }
+                </mat-grid-list>
 
-        <note-form-component (refresh)='refresh()'></note-form-component>
-
-        <mat-divider></mat-divider>
-
-        <h2>Your Reminders</h2>
-
-        <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="applyRemContainerHeight()">
-            @for (reminder of reminders(); track reminder.id) {
-                <mat-grid-tile>
-                    <mat-card class="reminderItem card" appearance="outlined">
-                        <div class="header">
-                            <span class="title">{{ reminder.title }}</span>
-                            <mat-chip>{{ reminder.category }}</mat-chip>
-                            <span class="date">{{ reminder.date }}</span>
-                        </div>
-                        <div class="buttons buttonsRem">
-                            <reminder-edit-component [id]="reminder.id"
-                                                     (refresh)="refreshSingleReminder($event)"></reminder-edit-component>
-                            <button (click)="deleteReminder(reminder.id)" matButton="outlined">delete</button>
-                            @if (!reminder.done) {
-                                <button matButton="outlined" (click)="done(reminder.id)">done</button>
-                            }
-                            <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
-                        </div>
-                    </mat-card>
-                </mat-grid-tile>
-            }
-        </mat-grid-list>
-
-        <reminder-form-component (refresh)="refreshReminders()"></reminder-form-component>
+                <reminder-form-component (refresh)="refreshReminders()"></reminder-form-component>
+            </mat-tab>
+        </mat-tab-group>
 
         <router-outlet/>
     `,
@@ -121,6 +122,16 @@ export class App implements OnDestroy {
     protected readonly noteService: NoteService;
     protected readonly reminderService: ReminderService;
     protected readonly cols = signal(3);
+    protected readonly reminderHeight = computed(() => {
+        return {'height': (Math.ceil(this.reminders().length / this.cols()) * 10) + 'rem'};
+    });
+    protected readonly noteHeight = computed(() => {
+        try {
+            return {'height': (Math.ceil(this.notes().length / this.cols()) * (16 + (8 * (this.notes().reduce(((acc, n, i, arr) => (n.reminders.length > acc.reminders.length) ? n : acc), this.notes().at(0)!)).reminders.length))) + 'rem'};
+        } catch (error) {
+            return {'height': (Math.ceil(this.notes().length / this.cols()) * 16) + 'rem'};
+        }
+    });
     private readonly updateSubjectNotes = new Subject<NoteMessage>()
     private readonly updateSubjectRems = new Subject<RemMessage>()
 
