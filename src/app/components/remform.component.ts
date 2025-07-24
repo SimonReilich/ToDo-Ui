@@ -51,14 +51,14 @@ export class RemformComponent {
             </mat-form-field>
 
             <mat-form-field>
-                <mat-label>Meeting date</mat-label>
+                <mat-label>date</mat-label>
                 <input matInput [matDatepicker]="picker" [(ngModel)]="value" [ngModelOptions]="{standalone: true}">
                 <mat-datepicker-toggle [for]="picker" matSuffix/>
                 <mat-datepicker #picker></mat-datepicker>
             </mat-form-field>
 
             <mat-form-field>
-                <mat-label>Meeting time</mat-label>
+                <mat-label>time</mat-label>
                 <input matInput
                        [matTimepicker]="timepicker"
                        [(ngModel)]="value"
@@ -79,23 +79,9 @@ export class RemformComponent {
                 <input matInput type="text" id="note" [formControl]="note">
             </mat-form-field>
         </form>
-        <button (click)="add()" matButton="outlined">create</button>`,
+        <button (click)="add()" matButton="outlined" class="formButton">create</button>`,
     providers: [provideNativeDateAdapter()],
-    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatDatepicker, MatTimepickerInput, MatTimepicker, MatTimepickerToggle,
-        ReactiveFormsModule,
-        MatFormField,
-        MatLabel,
-        MatOption,
-        MatSelect,
-        MatButton,
-        MatInput,
-        MatDatepicker,
-        MatDatepickerToggle,
-        MatTimepicker,
-        MatTimepickerToggle,
-        MatTimepickerInput,
-        FormsModule,
-        MatDatepickerInput,],
+    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatDatepicker, MatTimepickerInput, MatTimepicker, MatTimepickerToggle,],
 })
 
 export class CreateReminderSheet {
@@ -107,11 +93,6 @@ export class CreateReminderSheet {
         inject<MatBottomSheetRef<CreateReminderSheet>>(MatBottomSheetRef);
 
     constructor(private reminderService: ReminderService, private noteService: NoteService) {
-    }
-
-    openLink(event: MouseEvent): void {
-        this._bottomSheetRef.dismiss();
-        event.preventDefault();
     }
 
     add() {

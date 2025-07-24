@@ -70,11 +70,6 @@ export class CreateNoteSheet {
     constructor(private noteService: NoteService) {
     }
 
-    openLink(event: MouseEvent): void {
-        this._bottomSheetRef.dismiss();
-        event.preventDefault();
-    }
-
     add() {
         this.noteService.create(<Note>{
             id: 0,

@@ -28,7 +28,7 @@ interface RemMessage {
 
 @Component({
     selector: 'td-root',
-    imports: [RouterOutlet, NoteformComponent, RemformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatToolbar, MatChip, MatDivider, MatCheckbox, NgStyle],
+    imports: [RouterOutlet, NoteformComponent, RemformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle],
     template: `
         <h1>Welcome to {{ title() }}!</h1>
 
@@ -182,34 +182,6 @@ export class App implements OnDestroy {
             category: original.category,
         }
         this.updateSubjectNotes.next({type: 'E', note: modified})
-    }
-
-    addRemToNote(input: [number, string]) {
-        const original = this.notes().filter(note => note.name.trim().toLowerCase() == input[1].trim().toLowerCase())[0]
-        if (original != undefined) {
-            const modified: Note = {
-                id: original.id,
-                name: original.name,
-                description: original.description,
-                reminders: [...original.reminders, this.reminders().filter(r => r.id == input[0])[0]],
-                category: original.category,
-            }
-            this.noteService.addReminder(modified.id, input[0])
-            this.updateSubjectNotes.next({type: 'E', note: modified})
-        }
-    }
-
-    add(note: Note) {
-        this.updateSubjectNotes.next({type: 'C', note: note})
-        note.reminders.forEach(reminder => {
-            if (!this.reminders().includes(reminder)) {
-                this.updateSubjectRems.next({type: 'C', reminder: reminder})
-            }
-        })
-    }
-
-    addRem(reminder: Reminder) {
-        this.updateSubjectRems.next({type: 'C', reminder: reminder})
     }
 
     applyRemContainerHeight() {
