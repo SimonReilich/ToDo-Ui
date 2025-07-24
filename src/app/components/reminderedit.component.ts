@@ -20,7 +20,7 @@ import {Note, NoteService} from "../api/note.service";
         FormsModule,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined" class="open">edit</button>
+        <button (click)="openBottomSheet()" matButton="outlined">edit</button>
     `,
     styles: `
     `

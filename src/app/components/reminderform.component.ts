@@ -3,29 +3,29 @@ import {Reminder, ReminderService} from "../api/reminder.service";
 import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatFormField, MatInput, MatLabel} from "@angular/material/input";
 import {MatOption, MatSelect} from "@angular/material/select";
-import {MatButton} from "@angular/material/button";
+import {MatButton, MatFabButton} from "@angular/material/button";
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from "@angular/material/datepicker";
 import {MatTimepicker, MatTimepickerInput, MatTimepickerToggle} from "@angular/material/timepicker";
 import {provideNativeDateAdapter} from "@angular/material/core";
 import {MatListModule} from "@angular/material/list";
 import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
 import {Note, NoteService} from "../api/note.service";
+import {MatIcon, MatIconModule} from "@angular/material/icon";
 
 @Component({
     selector: 'reminder-form-component',
     providers: [provideNativeDateAdapter()],
     imports: [
         ReactiveFormsModule,
-        MatButton,
         FormsModule,
+        MatFabButton,
+        MatIcon,
+        MatIconModule,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined" class="open">add</button>
+        <button (click)="openBottomSheet()" matFab class="open"><mat-icon fontIcon="add"></mat-icon></button>
     `,
     styles: `
-    .open {
-      margin-bottom: 2rem;
-    }
     `
 })
 export class ReminderformComponent {

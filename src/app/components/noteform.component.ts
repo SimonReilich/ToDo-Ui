@@ -1,26 +1,25 @@
 import {Component, inject, output} from '@angular/core';
 import {Note, NoteService} from "../api/note.service";
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
-import {MatButton} from "@angular/material/button";
+import {MatButton, MatFabButton} from "@angular/material/button";
 import {MatFormField, MatInput} from "@angular/material/input";
 import {MatLabel} from "@angular/material/form-field";
 import {MatOption, MatSelect} from "@angular/material/select";
 import {MatListModule} from "@angular/material/list";
 import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
+import {MatIconModule} from "@angular/material/icon";
 
 @Component({
     selector: 'note-form-component',
     imports: [
         ReactiveFormsModule,
-        MatButton,
+        MatFabButton,
+        MatIconModule,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined" class="open">add</button>
+        <button (click)="openBottomSheet()" matFab class="open"><mat-icon fontIcon="add"></mat-icon></button>
     `,
     styles: `
-      .open {
-        margin-bottom: 2rem;
-      }
     `
 })
 export class NoteformComponent {

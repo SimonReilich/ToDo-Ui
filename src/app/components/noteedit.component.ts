@@ -15,7 +15,7 @@ import {MAT_BOTTOM_SHEET_DATA, MatBottomSheet, MatBottomSheetRef} from "@angular
         MatButton,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined" class="open">edit</button>
+        <button (click)="openBottomSheet()" matButton="outlined">edit</button>
     `,
     styles: `
     `
