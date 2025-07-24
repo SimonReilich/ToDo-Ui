@@ -1,4 +1,4 @@
-import {Component, OnDestroy, Signal, signal} from '@angular/core';
+import {Component, HostListener, OnDestroy, Signal, signal} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {Note, NoteService} from "./api/note.service";
 import {toSignal} from "@angular/core/rxjs-interop";
@@ -38,7 +38,7 @@ interface RemMessage {
 
         <h2>Your Notes</h2>
 
-        <mat-grid-list [cols]="calculateCols()" rowHeight="fit" [ngStyle]="applyNoteContainerHeight()">
+        <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="applyNoteContainerHeight()">
             @for (note of notes(); track note.id) {
                 <mat-grid-tile>
                     <mat-card appearance="outlined" class="card">
@@ -84,7 +84,7 @@ interface RemMessage {
 
         <h2>Your Reminders</h2>
 
-        <mat-grid-list [cols]="calculateCols()" rowHeight="fit" [ngStyle]="applyRemContainerHeight()">
+        <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="applyRemContainerHeight()">
             @for (reminder of reminders(); track reminder.id) {
                 <mat-grid-tile>
                     <mat-card class="reminderItem card" appearance="outlined">
@@ -124,9 +124,13 @@ export class App implements OnDestroy {
     private readonly updateSubjectNotes = new Subject<NoteMessage>()
     private readonly updateSubjectRems = new Subject<RemMessage>()
 
+    protected readonly cols = signal(3);
+
     constructor(protected readonly nService: NoteService, protected readonly rService: ReminderService) {
         this.noteService = nService;
         this.reminderService = rService;
+
+        this.cols.update(_ => this.calculateCols())
 
         setTimeout(() => this.title.set("your notes"), 2000)
 
@@ -141,6 +145,11 @@ export class App implements OnDestroy {
                 switchMap(reminders => this.updateSubjectRems.pipe(scan((acc, r) => this.processRems(this, acc, r), reminders), startWith(reminders))),
             )
         this.reminders = toSignal(reminders$, {initialValue: []});
+    }
+
+    @HostListener('window:resize', ['$event'])
+    sizeChange(event: any) {
+        this.cols.update(_ => this.calculateCols())
     }
 
     ngOnDestroy() {
