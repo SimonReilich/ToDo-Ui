@@ -114,6 +114,14 @@ interface RemMessage {
 
                 <reminder-form-component></reminder-form-component>
             </mat-tab>
+            
+            <mat-tab label="Tags">
+                
+            </mat-tab>
+            
+            <mat-tab label="Search">
+                
+            </mat-tab>
         </mat-tab-group>
 
         <router-outlet/>
@@ -144,7 +152,6 @@ export class App {
         this.noteService = nService;
         this.reminderService = rService;
         this.stateService = sService
-        this.stateService.updateReminders()
 
         this.cols.update(_ => this.calculateCols())
         setTimeout(() => this.title.set("your notes"), 2000)

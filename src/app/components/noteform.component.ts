@@ -56,7 +56,7 @@ export class NoteformComponent {
         <div class="formButtonContainer">
             <button (click)="add()" matButton="outlined" class="formButton">create</button>
         </div>`,
-    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatProgressSpinner],
+    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel,],
 })
 
 export class CreateNoteSheet {

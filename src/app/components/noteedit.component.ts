@@ -63,7 +63,7 @@ export class NoteeditComponent {
             <button (click)="edit()" matButton="outlined" class="formButton">confirm</button>
         </div>
     `,
-    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatProgressSpinner],
+    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel,],
 })
 
 export class CreateNoteSheet {

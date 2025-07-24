@@ -78,7 +78,7 @@ export class ReminderformComponent {
         </div>
         `,
     providers: [provideNativeDateAdapter()],
-    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatDatepicker, MatTimepickerInput, MatTimepicker, MatTimepickerToggle, MatProgressSpinner,],
+    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatDatepicker, MatTimepickerInput, MatTimepicker, MatTimepickerToggle,],
 })
 
 export class CreateReminderSheet {
