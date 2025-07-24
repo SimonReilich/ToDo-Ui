@@ -1,4 +1,4 @@
-import {Component, inject, output} from '@angular/core';
+import {Component, inject, output, signal} from '@angular/core';
 import {Note, NoteService} from "../api/note.service";
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {MatButton, MatFabButton} from "@angular/material/button";
@@ -8,6 +8,8 @@ import {MatOption, MatSelect} from "@angular/material/select";
 import {MatListModule} from "@angular/material/list";
 import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
 import {MatIconModule} from "@angular/material/icon";
+import {MatProgressSpinner} from "@angular/material/progress-spinner";
+import {StateService} from "../api/state.service";
 
 @Component({
     selector: 'note-form-component',
@@ -24,14 +26,10 @@ import {MatIconModule} from "@angular/material/icon";
 })
 export class NoteformComponent {
 
-    refresh = output<void>();
-
     private _bottomSheet = inject(MatBottomSheet);
 
     openBottomSheet(): void {
-        this._bottomSheet.open(CreateNoteSheet).afterDismissed().subscribe(_ => {
-            this.refresh.emit()
-        });
+        this._bottomSheet.open(CreateNoteSheet)
     }
 }
 
@@ -55,28 +53,33 @@ export class NoteformComponent {
                 </mat-select>
             </mat-form-field>
         </form>
-        <button (click)="add()" matButton="outlined" class="formButton">create</button>`,
-    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel],
+        <div class="formButtonContainer">
+            <button (click)="add()" matButton="outlined" class="formButton">create</button>
+        </div>`,
+    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatProgressSpinner],
 })
 
 export class CreateNoteSheet {
     title = new FormControl('');
     desc = new FormControl('');
     imp = new FormControl('ToDo');
+    waiting = signal(false)
+
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateNoteSheet>>(MatBottomSheetRef);
 
-    constructor(private noteService: NoteService) {
+    constructor(private stateService: StateService) {
     }
 
     add() {
-        const self = this
-        this.noteService.create(<Note>{
-            id: 0,
-            name: this.title.value,
-            description: this.desc.value,
+        this.waiting.update(_ => true)
+        this.stateService.addNote({
+            id: -1,
+            name: this.title.value!,
+            description: this.desc.value!,
             reminders: [],
-            category: this.imp.value,
-        }).subscribe(_ => self._bottomSheetRef.dismiss())
+            category: this.imp.value!,
+        })
+        this._bottomSheetRef.dismiss()
     }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs";
+import {delay, Observable} from "rxjs";
 import {Reminder} from "./reminder.service";
 
 export interface Note {
@@ -18,11 +18,11 @@ export class NoteService {
   constructor(private readonly http: HttpClient) { }
 
   getAll(): Observable<Note[]> {
-    return this.http.get<Note[]>('/api/notes')
+    return this.http.get<Note[]>('/api/notes').pipe(delay(2_000))
   }
 
   get(id: number): Observable<Note> {
-    return this.http.get<Note>('/api/notes/' + id)
+    return this.http.get<Note>('/api/notes/' + id).pipe(delay(2_000))
   }
 
   create(note: Note) {
@@ -31,22 +31,22 @@ export class NoteService {
       description: note.description,
       reminders: note.reminders,
       category: note.category
-    })
+    }).pipe(delay(2_000))
   }
 
   update(note: Note) {
-    return this.http.put('/api/notes/' + note.id, note)
+    return this.http.put('/api/notes/' + note.id, note).pipe(delay(2_000))
   }
 
   addReminder(id: number, rId: number) {
-    this.http.put('/api/notes/' + id + '/reminders/' + rId, {}).subscribe()
+    return this.http.put('/api/notes/' + id + '/reminders/' + rId, {}).pipe(delay(2_000))
   }
 
   removeReminder(id: number, rId: number) {
-    this.http.delete('/api/notes/' + id + '/reminders/' + rId).subscribe()
+    return this.http.delete('/api/notes/' + id + '/reminders/' + rId).pipe(delay(2_000))
   }
 
   delete(id: number) {
-    this.http.delete('/api/notes/' + id).subscribe()
+    return this.http.delete('/api/notes/' + id).pipe(delay(2_000))
   }
 }

@@ -55,6 +55,16 @@ form {
   margin: 1rem;
 }
 
+.formButtonContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: row-reverse;
+
+  mat-spinner {
+    margin: 1rem auto 1rem 1rem;
+  }
+}
+
 button {
   margin-top: 1rem;
   margin-right: 1rem;
@@ -137,6 +147,14 @@ note-form-component, reminder-form-component {
   button {
     margin: 0;
   }
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+mat-spinner {
+  margin: 1rem;
 }
 
 html, body { padding-inline: 0;}

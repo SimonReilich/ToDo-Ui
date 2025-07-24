@@ -1,10 +1,8 @@
 import {Component, computed, HostListener, OnDestroy, Signal, signal} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {Note, NoteService} from "./api/note.service";
-import {toSignal} from "@angular/core/rxjs-interop";
 import {NoteformComponent} from "./components/noteform.component";
 import {Reminder, ReminderService} from "./api/reminder.service";
-import {scan, startWith, Subject, switchMap} from "rxjs";
 import {ReminderformComponent} from "./components/reminderform.component";
 import {MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle} from "@angular/material/card";
 import {MatButton} from "@angular/material/button";
@@ -17,6 +15,8 @@ import {NoteeditComponent} from "./components/noteedit.component";
 import {RemindereditComponent} from "./components/reminderedit.component";
 import {MatTab, MatTabGroup} from "@angular/material/tabs";
 import {MatToolbar} from "@angular/material/toolbar";
+import {StateService} from "./api/state.service";
+import {MatProgressSpinner} from "@angular/material/progress-spinner";
 
 interface NoteMessage {
     type: 'D' | 'C' | 'E' | 'ER' | 'DR' | 'L';
@@ -31,17 +31,21 @@ interface RemMessage {
 
 @Component({
     selector: 'td-root',
-    imports: [RouterOutlet, NoteformComponent, ReminderformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle, NoteeditComponent, RemindereditComponent, MatTabGroup, MatTab, MatToolbar,],
+    imports: [RouterOutlet, NoteformComponent, ReminderformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle, NoteeditComponent, RemindereditComponent, MatTabGroup, MatTab, MatToolbar, MatProgressSpinner,],
     template: `
         <mat-toolbar>
             <span>Welcome to {{ title() }}</span>
+            @if (StateService.working()) {
+                <span class="spacer"></span>
+                <mat-spinner diameter="23"></mat-spinner>
+            }
         </mat-toolbar>
 
 
         <mat-tab-group>
             <mat-tab label="Notes">
                 <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="noteHeight()">
-                    @for (note of notes(); track note.id) {
+                    @for (note of StateService.notes(); track note.id) {
                         <mat-grid-tile>
                             <mat-card appearance="outlined" class="card">
                                 <mat-card-header>
@@ -60,10 +64,10 @@ interface RemMessage {
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
                                             <div class="buttons">
-                                                <button (click)="removeRemFromNote(note.id, reminder.id)" matButton>remove
+                                                <button (click)="stateService.removeReminder(note.id, reminder.id)" matButton>remove
                                                 </button>
                                                 @if (!reminder.done) {
-                                                    <button matButton (click)="done(reminder.id)">done</button>
+                                                    <button matButton (click)="stateService.completeReminder(reminder.id)">done</button>
                                                 }
                                                 <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
                                             </div>
@@ -72,22 +76,22 @@ interface RemMessage {
                                 </mat-card-content>
                                 <mat-divider></mat-divider>
                                 <mat-card-actions>
-                                    <note-edit-component [id]="note.id" (refresh)="refreshSingle($event)"></note-edit-component>
-                                    <button matButton="outlined" (click)="deleteNote(note.id)">delete</button>
+                                    <note-edit-component [id]="note.id" (refresh)="stateService.updateNotes()"></note-edit-component>
+                                    <button matButton="outlined" (click)="stateService.deleteNote(note.id)">delete</button>
                                 </mat-card-actions>
                             </mat-card>
                         </mat-grid-tile>
                     }
                 </mat-grid-list>
 
-                <note-form-component (refresh)='refresh()'></note-form-component>
+                <note-form-component></note-form-component>
 
             </mat-tab>
             <mat-tab label="Reminders">
 
 
                 <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="reminderHeight()">
-                    @for (reminder of reminders(); track reminder.id) {
+                    @for (reminder of StateService.reminders(); track reminder.id) {
                         <mat-grid-tile>
                             <mat-card class="reminderItem card" appearance="outlined">
                                 <div class="header">
@@ -96,11 +100,10 @@ interface RemMessage {
                                     <span class="date">{{ reminder.date }}</span>
                                 </div>
                                 <div class="buttons buttonsRem">
-                                    <reminder-edit-component [id]="reminder.id"
-                                                             (refresh)="refreshSingleReminder($event)"></reminder-edit-component>
-                                    <button (click)="deleteReminder(reminder.id)" matButton="outlined">delete</button>
+                                    <reminder-edit-component [id]="reminder.id"></reminder-edit-component>
+                                    <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined">delete</button>
                                     @if (!reminder.done) {
-                                        <button matButton="outlined" (click)="done(reminder.id)">done</button>
+                                        <button matButton="outlined" (click)="stateService.completeReminder(reminder.id)">done</button>
                                     }
                                     <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
                                 </div>
@@ -109,7 +112,7 @@ interface RemMessage {
                     }
                 </mat-grid-list>
 
-                <reminder-form-component (refresh)="refreshReminders()"></reminder-form-component>
+                <reminder-form-component></reminder-form-component>
             </mat-tab>
         </mat-tab-group>
 
@@ -118,209 +121,43 @@ interface RemMessage {
     styles: `
     `,
 })
-export class App implements OnDestroy {
+export class App {
     protected readonly title = signal('notes');
-    protected readonly notes: Signal<Note[]>;
-    protected readonly reminders: Signal<Reminder[]>;
 
     protected readonly noteService: NoteService;
     protected readonly reminderService: ReminderService;
+    protected readonly stateService: StateService;
+
     protected readonly cols = signal(3);
     protected readonly reminderHeight = computed(() => {
-        return {'height': (Math.ceil(this.reminders().length / this.cols()) * 10) + 'rem'};
+        return {'height': (Math.ceil(StateService.reminders().length / this.cols()) * 10) + 'rem'};
     });
     protected readonly noteHeight = computed(() => {
         try {
-            return {'height': (Math.ceil(this.notes().length / this.cols()) * (16 + (8 * (this.notes().reduce(((acc, n, i, arr) => (n.reminders.length > acc.reminders.length) ? n : acc), this.notes().at(0)!)).reminders.length))) + 'rem'};
+            return {'height': (Math.ceil(StateService.notes().length / this.cols()) * (16 + (8 * (StateService.notes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), StateService.notes().at(0)!)).reminders.length))) + 'rem'};
         } catch (error) {
-            return {'height': (Math.ceil(this.notes().length / this.cols()) * 16) + 'rem'};
+            return {'height': (Math.ceil(StateService.notes().length / this.cols()) * 16) + 'rem'};
         }
     });
-    private readonly updateSubjectNotes = new Subject<NoteMessage>()
-    private readonly updateSubjectRems = new Subject<RemMessage>()
 
-    constructor(protected readonly nService: NoteService, protected readonly rService: ReminderService) {
+    constructor(protected readonly nService: NoteService, protected readonly rService: ReminderService, protected readonly sService: StateService) {
         this.noteService = nService;
         this.reminderService = rService;
+        this.stateService = sService
+        this.stateService.updateReminders()
 
         this.cols.update(_ => this.calculateCols())
-
         setTimeout(() => this.title.set("your notes"), 2000)
-
-        const notes$ = this.noteService.getAll()
-            .pipe(
-                switchMap(notes => (this.updateSubjectNotes.pipe(scan((acc, n) => this.processNotes(this, acc, n), notes), startWith(notes)))),
-            )
-        this.notes = toSignal(notes$, {initialValue: []});
-
-        const reminders$ = this.reminderService.getAll()
-            .pipe(
-                switchMap(reminders => this.updateSubjectRems.pipe(scan((acc, r) => this.processRems(this, acc, r), reminders), startWith(reminders))),
-            )
-        this.reminders = toSignal(reminders$, {initialValue: []});
     }
 
     @HostListener('window:resize', ['$event'])
-    sizeChange(event: any) {
+    sizeChange(_: any) {
         this.cols.update(_ => this.calculateCols())
-    }
-
-    ngOnDestroy() {
-        this.updateSubjectNotes.complete()
-        this.updateSubjectRems.complete()
-    }
-
-    done(id: number) {
-        this.reminderService.complete(id)
-        const original = this.reminders().filter(reminder => reminder.id == id)[0]
-        const edited: Reminder = {
-            id: original.id,
-            title: original.title,
-            date: original.date,
-            category: original.category,
-            done: true
-        }
-        this.updateSubjectNotes.next({type: 'ER', reminder: edited})
-        this.updateSubjectRems.next({type: 'E', reminder: edited})
-    }
-
-    deleteReminder(id: number) {
-        const reminder = this.reminders().filter(reminder => reminder.id == id)[0]
-        this.reminderService.delete(id)
-        this.updateSubjectNotes.next({type: 'DR', reminder: reminder})
-        this.updateSubjectRems.next({type: 'D', reminder: reminder})
-    }
-
-    deleteNote(id: number) {
-        const note = this.notes().filter(reminder => reminder.id == id)[0]
-        this.noteService.delete(id)
-        this.updateSubjectNotes.next({type: 'D', note: note})
-    }
-
-    removeRemFromNote(id: number, rId: number) {
-        this.noteService.removeReminder(id, rId)
-        const original = this.notes().filter((note) => note.id == id)[0]
-        const modified: Note = {
-            id: original.id,
-            name: original.name,
-            description: original.description,
-            reminders: original.reminders.filter((r: Reminder) => r.id != rId),
-            category: original.category,
-        }
-        this.updateSubjectNotes.next({type: 'E', note: modified})
-    }
-
-    applyRemContainerHeight() {
-        return {'height': (Math.ceil(this.reminders().length / 3) * 10) + 'rem'};
-    }
-
-    applyNoteContainerHeight() {
-        try {
-            return {'height': (Math.ceil(this.notes().length / 3) * (16 + (8 * (this.notes().reduce(((acc, n, i, arr) => (n.reminders.length > acc.reminders.length) ? n : acc), this.notes().at(0)!)).reminders.length))) + 'rem'};
-        } catch (error) {
-            return {'height': (Math.ceil(this.notes().length / 3) * 16) + 'rem'};
-        }
-    }
-
-    refresh() {
-        this.updateSubjectNotes.next({type: 'L'})
-    }
-
-    refreshReminders() {
-        this.updateSubjectRems.next({type: "L"})
-        this.updateSubjectNotes.next({type: 'L'})
-    }
-
-    refreshSingle(id: number) {
-        this.noteService.get(id).subscribe(note => {
-            this.updateSubjectNotes.next({type: 'E', note: note})
-        })
-    }
-
-    refreshSingleReminder(id: number) {
-        this.refresh()
-        this.reminderService.get(id).subscribe(reminder => {
-            this.updateSubjectRems.next({type: 'E', reminder: reminder})
-        })
-    }
-
-    processNotes(self: App, state: Note[], msg: NoteMessage): Note[] {
-        switch (msg.type) {
-            case "C":
-                return [...state, msg.note!];
-            case 'D':
-                return state.filter((n) => n.id != msg.note!.id);
-            case 'E':
-                return state.map(note => {
-                    if (note.id == msg.note!.id) {
-                        return msg.note!;
-                    } else {
-                        return note;
-                    }
-                });
-            case 'ER':
-                return state.map((note: Note) => {
-                    if (note.reminders.find((r: Reminder) => r.id == msg.reminder!.id)) {
-                        return {
-                            id: note.id,
-                            name: note.name,
-                            description: note.description,
-                            reminders: note.reminders.map((r: Reminder) => {
-                                if (r.id == msg.reminder!.id) {
-                                    return msg.reminder!;
-                                } else {
-                                    return r;
-                                }
-                            }),
-                            category: note.category,
-                        }
-                    } else {
-                        return note
-                    }
-                })
-            case 'DR':
-                return state.map((note) => {
-                    return {
-                        id: note.id,
-                        name: note.name,
-                        description: note.description,
-                        reminders: note.reminders.filter((r) => r.id != msg.reminder!.id),
-                        category: note.category,
-                    }
-                })
-            case 'L':
-                self.noteService.getAll().subscribe(notes => notes.forEach(n => self.updateSubjectNotes.next({
-                    type: 'C',
-                    note: n
-                })))
-                return []
-        }
-    }
-
-    processRems(self: App, state: Reminder[], msg: RemMessage): Reminder[] {
-        switch (msg.type) {
-            case "D":
-                return state.filter((r) => r.id != msg.reminder!.id);
-            case "E":
-                return state.map(reminder => {
-                    if (reminder.id == msg.reminder!.id) {
-                        return msg.reminder!;
-                    } else {
-                        return reminder
-                    }
-                })
-            case 'C':
-                return [...state, msg.reminder!];
-            case 'L':
-                self.reminderService.getAll().subscribe(reminders => reminders.forEach(r => self.updateSubjectRems.next({
-                    type: 'C',
-                    reminder: r
-                })))
-                return []
-        }
     }
 
     calculateCols() {
         return Math.floor(window.innerWidth / 400)
     }
+
+    protected readonly StateService = StateService;
 }

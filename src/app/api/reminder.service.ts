@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs";
+import {delay, Observable} from "rxjs";
 
 export interface Reminder {
     id: number;
@@ -17,11 +17,11 @@ export class ReminderService {
     constructor(private readonly http: HttpClient) { }
 
     getAll(): Observable<Reminder[]> {
-        return this.http.get<Reminder[]>('/api/reminders')
+        return this.http.get<Reminder[]>('/api/reminders').pipe(delay(2_000))
     }
 
     get(id: number): Observable<Reminder> {
-        return this.http.get<Reminder>('/api/reminders/' + id)
+        return this.http.get<Reminder>('/api/reminders/' + id).pipe(delay(2_000))
     }
 
     create(reminder: Reminder) {
@@ -30,18 +30,18 @@ export class ReminderService {
             date: reminder.date,
             category: reminder.category,
             done: reminder.done,
-        })
+        }).pipe(delay(2_000))
     }
 
     update(reminder: Reminder) {
-        return this.http.put('/api/reminders/' + reminder.id, reminder)
+        return this.http.put('/api/reminders/' + reminder.id, reminder).pipe(delay(2_000))
     }
 
     complete(id: number) {
-        this.http.put('/api/reminders/complete/' + id, {}).subscribe()
+        return this.http.put('/api/reminders/complete/' + id, {}).pipe(delay(2_000))
     }
 
     delete(id: number) {
-        this.http.delete('/api/reminders/' + id).subscribe()
+        return this.http.delete('/api/reminders/' + id).pipe(delay(2_000))
     }
 }

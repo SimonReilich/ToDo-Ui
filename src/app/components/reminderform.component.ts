@@ -1,4 +1,4 @@
-import {Component, inject, output} from '@angular/core';
+import {Component, inject, output, signal} from '@angular/core';
 import {Reminder, ReminderService} from "../api/reminder.service";
 import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatFormField, MatInput, MatLabel} from "@angular/material/input";
@@ -11,6 +11,8 @@ import {MatListModule} from "@angular/material/list";
 import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
 import {Note, NoteService} from "../api/note.service";
 import {MatIcon, MatIconModule} from "@angular/material/icon";
+import {MatProgressSpinner} from "@angular/material/progress-spinner";
+import {StateService} from "../api/state.service";
 
 @Component({
     selector: 'reminder-form-component',
@@ -30,14 +32,10 @@ import {MatIcon, MatIconModule} from "@angular/material/icon";
 })
 export class ReminderformComponent {
 
-    refresh = output<void>();
-
     private _bottomSheet = inject(MatBottomSheet);
 
     openBottomSheet(): void {
-        this._bottomSheet.open(CreateReminderSheet).afterDismissed().subscribe(_ => {
-            this.refresh.emit()
-        })
+        this._bottomSheet.open(CreateReminderSheet)
     }
 }
 
@@ -74,48 +72,36 @@ export class ReminderformComponent {
                     <mat-option value="Important">Important</mat-option>
                 </mat-select>
             </mat-form-field>
-            <mat-form-field>
-                <mat-label>note</mat-label>
-                <mat-select [formControl]="note">
-                    <mat-option value="">none</mat-option>
-                    @for (note of notes; track note.id) {
-                        <mat-option [value]="note.name">{{ note.name }}</mat-option>
-                    }
-                </mat-select>
-            </mat-form-field>
         </form>
-        <button (click)="add()" matButton="outlined" class="formButton">create</button>`,
+        <div class="formButtonContainer">
+            <button (click)="add()" matButton="outlined" class="formButton">create</button>
+        </div>
+        `,
     providers: [provideNativeDateAdapter()],
-    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatDatepicker, MatTimepickerInput, MatTimepicker, MatTimepickerToggle,],
+    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatDatepicker, MatTimepickerInput, MatTimepicker, MatTimepickerToggle, MatProgressSpinner,],
 })
 
 export class CreateReminderSheet {
     title = new FormControl('');
     imp = new FormControl('ToDo');
-    note = new FormControl('');
     value: Date = new Date();
-    notes: Note[] = [];
+    waiting = signal(false)
 
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateReminderSheet>>(MatBottomSheetRef);
 
-    constructor(private reminderService: ReminderService, private noteService: NoteService) {
-        this.noteService.getAll().subscribe(notes => this.notes = notes);
+    constructor(private stateService: StateService) {
     }
 
     add() {
-        this.reminderService.create(<Reminder>{
-            id: 0,
-            title: this.title.value,
-            category: this.imp.value,
-            date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0')
-        }).subscribe(r => {
-            this.noteService.getAll().subscribe(notes => notes.forEach(note => {
-                if (this.note.value != undefined && note.name.trim().toLowerCase() === this.note.value.toLowerCase()) {
-                    this.noteService.addReminder(note.id, r.id)
-                }
-            }))
-            this._bottomSheetRef.dismiss()
-        });
+        this.waiting.update(_ => true)
+        this.stateService.addReminder({
+            id: -1,
+            title: this.title.value!,
+            category: this.imp.value!,
+            date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0'),
+            done: false
+        })
+        this._bottomSheetRef.dismiss()
     }
 }

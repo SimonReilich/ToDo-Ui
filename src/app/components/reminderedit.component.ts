@@ -1,4 +1,4 @@
-import {Component, Inject, inject, input, output} from '@angular/core';
+import {Component, Inject, inject, input, output, signal} from '@angular/core';
 import {Reminder, ReminderService} from "../api/reminder.service";
 import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatFormField, MatInput, MatLabel} from "@angular/material/input";
@@ -10,6 +10,8 @@ import {provideNativeDateAdapter} from "@angular/material/core";
 import {MatListModule} from "@angular/material/list";
 import {MAT_BOTTOM_SHEET_DATA, MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
 import {Note, NoteService} from "../api/note.service";
+import {MatProgressSpinner} from "@angular/material/progress-spinner";
+import {StateService} from "../api/state.service";
 
 @Component({
     selector: 'reminder-edit-component',
@@ -27,16 +29,12 @@ import {Note, NoteService} from "../api/note.service";
 })
 export class RemindereditComponent {
 
-    refresh = output<number>();
-
     private _bottomSheet = inject(MatBottomSheet);
 
     id = input.required<number>()
 
     openBottomSheet(): void {
-        this._bottomSheet.open(CreateReminderSheet, {data: {id: this.id()}}).afterDismissed().subscribe(_ => {
-            this.refresh.emit(this.id())
-        })
+        this._bottomSheet.open(CreateReminderSheet, {data: {id: this.id()}})
     }
 }
 
@@ -77,15 +75,18 @@ export class RemindereditComponent {
                 <mat-label>note</mat-label>
                 <mat-select [formControl]="note">
                     <mat-option value="">none</mat-option>
-                    @for (note of notes; track note.id) {
+                    @for (note of StateService.notes(); track note.id) {
                         <mat-option [value]="note.name">{{ note.name }}</mat-option>
                     }
                 </mat-select>
             </mat-form-field>
         </form>
-        <button (click)="edit()" matButton="outlined" class="formButton">confirm</button>`,
+        <div class="formButtonContainer">
+            <button (click)="edit()" matButton="outlined" class="formButton">confirm</button>
+        </div>
+    `,
     providers: [provideNativeDateAdapter()],
-    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatDatepicker, MatTimepickerInput, MatTimepicker, MatTimepickerToggle,],
+    imports: [MatListModule, MatFormField, ReactiveFormsModule, MatSelect, MatOption, MatButton, MatInput, MatLabel, MatDatepickerInput, FormsModule, MatDatepickerToggle, MatDatepicker, MatTimepickerInput, MatTimepicker, MatTimepickerToggle, MatProgressSpinner,],
 })
 
 export class CreateReminderSheet {
@@ -94,42 +95,44 @@ export class CreateReminderSheet {
     note = new FormControl('');
     value: Date = new Date();
     notes: Note[] = [];
+    waiting = signal(false)
 
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateReminderSheet>>(MatBottomSheetRef);
 
-    constructor(private reminderService: ReminderService, private noteService: NoteService, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {id: number}) {
-        this.noteService.getAll().subscribe(notes => this.notes = notes);
+    constructor(private stateService: StateService, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {id: number}) {
         const self = this
-        reminderService.get(data.id).subscribe(reminder => {
+        const reminder = stateService.getReminderById(this.data.id)
+        const assignedNote = StateService.notes().find(n => n.reminders.some(reminder => reminder.id == reminder.id))
+
+        if (reminder != undefined) {
             self.title = new FormControl(reminder.title);
             self.imp = new FormControl(reminder.category);
             self.value = new Date(reminder.date);
-            self.noteService.getAll().subscribe(notes => {
-                notes.forEach(note => {
-                    if (note.reminders.find(r => r.id == reminder.id)) {
-                        self.note = new FormControl(note.name)
-                    }
-                })
-            })
-        })
+            if (assignedNote != undefined) {
+                self.note = new FormControl(assignedNote.name)
+            }
+        }
     }
 
     edit() {
-        this.reminderService.update(<Reminder>{
+        this.waiting.update(_ => true)
+        this.stateService.editReminder({
             id: this.data.id,
-            title: this.title.value,
-            category: this.imp.value,
-            date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0')
-        }).subscribe(r => {
-            this.noteService.getAll().subscribe(notes => notes.forEach(note => {
-                if (this.note.value != undefined && note.name.trim().toLowerCase() === this.note.value.toLowerCase()) {
-                    this.noteService.addReminder(note.id, this.data.id)
-                } else {
-                    this.noteService.removeReminder(note.id, this.data.id)
-                }
-            }))
-            this._bottomSheetRef.dismiss()
-        });
+            title: this.title.value!,
+            category: this.imp.value!,
+            date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0'),
+            done: this.stateService.getReminderById(this.data.id)!.done
+        })
+        StateService.notes().forEach((note: Note) => {
+            if (note.name == this.note.value) {
+                this.stateService.assignReminder(note.id, this.data.id)
+            } else {
+                this.stateService.removeReminder(note.id, this.data.id)
+            }
+        })
+        this._bottomSheetRef.dismiss()
     }
+
+    protected readonly StateService = StateService;
 }
