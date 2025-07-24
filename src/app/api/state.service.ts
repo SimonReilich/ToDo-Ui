@@ -22,7 +22,7 @@ export class StateService {
     public static readonly notes: WritableSignal<Note[]> = signal([])
     public static readonly reminders: WritableSignal<Reminder[]> = signal([])
     public static readonly working: WritableSignal<boolean> = signal(false)
-    public static readonly delay: number = 10_000
+    public static readonly delay: number = 0
     protected readonly noteService: NoteService;
     protected readonly reminderService: ReminderService;
 
