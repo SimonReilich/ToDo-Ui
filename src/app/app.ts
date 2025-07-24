@@ -189,7 +189,7 @@ export class App implements OnDestroy {
     }
 
     applyRemContainerHeight() {
-        return {'height': (Math.ceil(this.reminders().length / 3) * 11) + 'rem'};
+        return {'height': (Math.ceil(this.reminders().length / 3) * 10) + 'rem'};
     }
 
     applyNoteContainerHeight() {
@@ -216,10 +216,10 @@ export class App implements OnDestroy {
     }
 
     refreshSingleReminder(id: number) {
+        this.refresh()
         this.reminderService.get(id).subscribe(reminder => {
             this.updateSubjectRems.next({type: 'E', reminder: reminder})
         })
-        this.refresh()
     }
 
     processNotes(self: App, state: Note[], msg: NoteMessage): Note[] {
@@ -229,7 +229,13 @@ export class App implements OnDestroy {
             case 'D':
                 return state.filter((n) => n.id != msg.note!.id);
             case 'E':
-                return [msg.note!, ...state.filter((n) => n.id != msg.note!.id)];
+                return state.map(note => {
+                    if (note.id == msg.note!.id) {
+                        return msg.note!;
+                    } else {
+                        return note;
+                    }
+                });
             case 'ER':
                 return state.map((note: Note) => {
                     if (note.reminders.find((r: Reminder) => r.id == msg.reminder!.id)) {
@@ -271,9 +277,13 @@ export class App implements OnDestroy {
             case "D":
                 return state.filter((r) => r.id != msg.reminder!.id);
             case "E":
-                const i = state.findIndex((r) => r.id == msg.reminder!.id)
-                state[i] = msg.reminder!;
-                return state
+                return state.map(reminder => {
+                    if (reminder.id == msg.reminder!.id) {
+                        return msg.reminder!;
+                    } else {
+                        return reminder
+                    }
+                })
             case 'C':
                 return [...state, msg.reminder!];
             case 'L':

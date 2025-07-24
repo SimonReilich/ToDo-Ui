@@ -74,7 +74,7 @@ export class RemindereditComponent {
                 </mat-select>
             </mat-form-field>
             <mat-form-field>
-                <mat-label>Note (optional)</mat-label>
+                <mat-label>note</mat-label>
                 <mat-select [formControl]="note">
                     <mat-option value="">none</mat-option>
                     @for (note of notes; track note.id) {
