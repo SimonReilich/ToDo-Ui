@@ -34,7 +34,7 @@ export class StateService {
 
     refresh() {
         setTimeout(() => {
-            this.updateTags().then(r => this.refresh())
+            this.updateTags().then(() => this.refresh())
         }, 30_000)
     }
 
