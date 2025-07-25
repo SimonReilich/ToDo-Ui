@@ -2,6 +2,7 @@ import {Injectable, signal, WritableSignal} from '@angular/core';
 import {Note, NoteService} from "./note.service";
 import {Reminder, ReminderService} from "./reminder.service";
 import {catchError} from "rxjs";
+import {Tag, TagService} from "./tag.service";
 
 function waitUntil(condition: any, checkInterval = 100) {
     return new Promise<void>(resolve => {
@@ -21,21 +22,19 @@ export class StateService {
 
     public static readonly notes: WritableSignal<Note[]> = signal([])
     public static readonly reminders: WritableSignal<Reminder[]> = signal([])
+    public static readonly tags: WritableSignal<Tag[]> = signal([])
+
     public static readonly working: WritableSignal<boolean> = signal(false)
+
     public static readonly delay: number = 2_000
-    protected readonly noteService: NoteService;
-    protected readonly reminderService: ReminderService;
 
-    constructor(protected nService: NoteService, protected rService: ReminderService) {
-        this.noteService = nService;
-        this.reminderService = rService;
-
-        this.updateReminders().then(() => this.refresh())
+    constructor(protected noteService: NoteService, protected reminderService: ReminderService, protected tagService: TagService) {
+        this.updateTags().then(() => this.refresh())
     }
 
     refresh() {
         setTimeout(() => {
-            this.updateReminders().then(r => this.refresh())
+            this.updateTags().then(r => this.refresh())
         }, 30_000)
     }
 
@@ -52,12 +51,22 @@ export class StateService {
         await this.updateNotes()
     }
 
+    async updateTags() {
+        this.tagService.getAll().subscribe(tags => {
+            StateService.tags.update(_ => tags)
+        })
+        await this.updateReminders()
+    }
+
     async addNote(note: Note) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.requestExclusive();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         StateService.notes.update(v => [...v, note])
         this.noteService.create(note).pipe(catchError(error => {
             this.deleteNoteSilent(note.id)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
@@ -71,15 +80,19 @@ export class StateService {
                 ))
             }
             StateService.working.update(_ => false)
+            Monitor.leave(lock)
         })
     }
 
     async addReminder(reminder: Reminder) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.requestExclusive();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         StateService.reminders.update(v => [...v, reminder])
         this.reminderService.create(reminder).pipe(catchError(error => {
             this.deleteReminderSilent(reminder.id)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
@@ -93,22 +106,57 @@ export class StateService {
                 ))
             }
             StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        })
+    }
+
+    async addTag(tag: Tag) {
+        const lock = Monitor.requestExclusive();
+        await waitUntil(() => Monitor.canWork(lock));
+        StateService.working.update(_ => true)
+        StateService.tags.update(v => [...v, tag])
+        this.tagService.create(tag).pipe(catchError(error => {
+            this.deleteTagSilent(tag.id)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+            return error
+        })).subscribe(result => {
+            if (typeof result === 'object') {
+                StateService.tags.update(v => v.map(t => {
+                        if (t.id == -1) {
+                            return result as Tag
+                        } else {
+                            return t
+                        }
+                    }
+                ))
+            }
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
         })
     }
 
     async deleteNote(id: number) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.request();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         const note = StateService.notes().find(n => n.id == id)
         StateService.notes.update(v => v.filter(n => n.id != id))
         this.noteService.delete(id).pipe(catchError(error => {
             this.addNoteSilent(note!)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
-        })).subscribe(_ => StateService.working.update(_ => false));
+        })).subscribe(_ => {
+                StateService.working.update(_ => false)
+                Monitor.leave(lock)
+            }
+        );
     }
 
     async deleteReminder(id: number) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.request();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         const reminder = StateService.reminders().find(r => r.id == id)
         StateService.reminders.update(v => v.filter(r => r.id != id))
@@ -123,12 +171,35 @@ export class StateService {
         }))
         this.reminderService.delete(id).pipe(catchError(error => {
             this.addReminderSilent(reminder!)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
-        })).subscribe(_ => StateService.working.update(_ => false))
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        })
+    }
+
+    async deleteTag(id: number) {
+        const lock = Monitor.request();
+        await waitUntil(() => Monitor.canWork(lock));
+        StateService.working.update(_ => true)
+        const tag = StateService.tags().find(n => n.id == id)
+        StateService.tags.update(v => v.filter(n => n.id != id))
+        this.tagService.delete(id).pipe(catchError(error => {
+            this.addTagSilent(tag!)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+            return error
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        });
     }
 
     async editNote(note: Note) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.request();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         const oldNote = StateService.notes().find(n => n.id == note.id)
         StateService.notes.update(v => v.map(n => {
@@ -140,12 +211,18 @@ export class StateService {
         }))
         this.noteService.update(note).pipe(catchError(error => {
             this.editNoteSilent(oldNote!)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
-        })).subscribe(_ => StateService.working.update(_ => false))
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        })
     }
 
     async editReminder(reminder: Reminder) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.request();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         const oldReminder = StateService.reminders().find(r => r.id == reminder.id)
         StateService.reminders.update(v => v.map(r => {
@@ -172,12 +249,41 @@ export class StateService {
         }))
         this.reminderService.update(reminder).pipe(catchError(error => {
             this.editReminderSilent(oldReminder!)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
-        })).subscribe(_ => StateService.working.update(_ => false))
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        })
+    }
+
+    async editTag(tag: Tag) {
+        const lock = Monitor.request();
+        await waitUntil(() => Monitor.canWork(lock));
+        StateService.working.update(_ => true)
+        const oldTag = StateService.tags().find(t => t.id == tag.id)
+        StateService.tags.update(v => v.map(t => {
+            if (t.id == tag.id) {
+                return tag
+            } else {
+                return t
+            }
+        }))
+        this.tagService.update(tag).pipe(catchError(error => {
+            this.editTagSilent(oldTag!)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+            return error
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        })
     }
 
     async completeReminder(id: number) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.request();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         StateService.reminders.update(v => v.map(r => {
             if (r.id == id) {
@@ -219,12 +325,18 @@ export class StateService {
         }))
         this.reminderService.complete(id).pipe(catchError(error => {
             this.uncompleteReminderSilent(id)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
-        })).subscribe(_ => StateService.working.update(_ => false))
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        })
     }
 
     async assignReminder(id: number, rId: number) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.requestExclusive();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         const reminder = StateService.reminders().find(r => r.id == rId)
         StateService.notes.update(v => v.map(n => {
@@ -242,12 +354,18 @@ export class StateService {
         }))
         this.noteService.addReminder(id, rId).pipe(catchError(error => {
             this.removeReminderSilent(id, rId)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
-        })).subscribe(_ => StateService.working.update(_ => false))
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        })
     }
 
     async removeReminder(id: number, rId: number) {
-        await waitUntil(() => !StateService.working());
+        const lock = Monitor.requestExclusive();
+        await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
         StateService.notes.update(v => v.map(n => {
             if (n.id == id) {
@@ -264,8 +382,17 @@ export class StateService {
         }))
         this.noteService.removeReminder(id, rId).pipe(catchError(error => {
             this.assignReminderSilent(id, rId)
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
             return error
-        })).subscribe(_ => StateService.working.update(_ => false))
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        })
+    }
+
+    async mergeTags(id1: number, id2: number) {
+        await this.deleteTag(id2)
     }
 
     getNoteById(id: number) {
@@ -276,6 +403,10 @@ export class StateService {
         return StateService.reminders().find(r => r.id == id)
     }
 
+    getTagById(id: number) {
+        return StateService.tags().find(t => t.id == id)
+    }
+
     private addNoteSilent(note: Note) {
         StateService.notes.update(v => [...v, note])
     }
@@ -284,12 +415,20 @@ export class StateService {
         StateService.reminders.update(v => [...v, reminder])
     }
 
+    private addTagSilent(tag: Tag) {
+        StateService.tags.update(v => [...v, tag])
+    }
+
     private deleteNoteSilent(id: number) {
         StateService.reminders.update(v => v.filter(n => n.id != id))
     }
 
     private deleteReminderSilent(id: number) {
         StateService.reminders.update(v => v.filter(r => r.id != id))
+    }
+
+    private deleteTagSilent(id: number) {
+        StateService.tags.update(v => v.filter(t => t.id != id))
     }
 
     private editNoteSilent(note: Note) {
@@ -308,6 +447,16 @@ export class StateService {
                 return reminder
             } else {
                 return r
+            }
+        }))
+    }
+
+    private editTagSilent(tag: Tag) {
+        StateService.tags.update(v => v.map(t => {
+            if (t.id == tag.id) {
+                return tag
+            } else {
+                return t
             }
         }))
     }
@@ -359,5 +508,67 @@ export class StateService {
                 return n
             }
         }))
+    }
+}
+
+interface Lock {
+    type: 'standard' | 'exclusive'
+    id: number
+}
+
+export class Monitor {
+
+    public static waitingOnExcl = signal<boolean>(false)
+    private static nextId: number = 0
+    private static registered: Lock[] = []
+    private static waiting: Lock[] = []
+
+    static request(): Lock {
+        const newLock: Lock = {
+            type: 'standard',
+            id: this.nextId,
+        }
+        this.nextId++
+        if (this.registered.length == 0 || this.registered.at(0)!.type == 'standard') {
+            this.registered.push(newLock)
+        } else {
+            this.waiting.push(newLock)
+        }
+        return newLock
+    }
+
+    static requestExclusive(): Lock {
+        this.waitingOnExcl.update(_ => true)
+        const newLock: Lock = {
+            type: 'exclusive',
+            id: this.nextId,
+        }
+        this.nextId++
+        if (this.registered.length == 0) {
+            this.registered.push(newLock)
+        } else {
+            this.waiting.push(newLock)
+        }
+        return newLock
+    }
+
+    static canWork(lock: Lock): boolean {
+        return this.registered.some(l => l.id == lock.id)
+    }
+
+    static leave(lock: Lock) {
+        this.registered = this.registered.filter(l => l.id != lock.id)
+        if (this.registered.length == 0) {
+            if (this.waiting.length != 0 && this.waiting.at(0)!.type == "standard") {
+                while (this.waiting.length != 0 && this.waiting.at(0)!.type == "standard") {
+                    this.registered.push(this.waiting.pop()!)
+                }
+            } else if (this.waiting.length != 0) {
+                this.registered.push(this.waiting.pop()!)
+            }
+        }
+        if (!(this.waiting.some(l => l.type == 'exclusive') || this.registered.some(l => l.type == 'exclusive'))) {
+            this.waitingOnExcl.update(_ => false)
+        }
     }
 }

@@ -1,9 +1,9 @@
-import {Component, computed, HostListener, OnDestroy, Signal, signal} from '@angular/core';
+import {Component, computed, HostListener, signal, WritableSignal} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
-import {Note, NoteService} from "./api/note.service";
-import {NoteformComponent} from "./components/noteform.component";
-import {Reminder, ReminderService} from "./api/reminder.service";
-import {ReminderformComponent} from "./components/reminderform.component";
+import {Note} from "./api/note.service";
+import {NoteCreationComponent} from "./components/create/note-creation.component";
+import {Reminder} from "./api/reminder.service";
+import {ReminderCreationComponent} from "./components/create/reminder-creation.component";
 import {MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle} from "@angular/material/card";
 import {MatButton} from "@angular/material/button";
 import {MatGridList, MatGridTile} from "@angular/material/grid-list";
@@ -11,36 +11,59 @@ import {MatDivider} from "@angular/material/list";
 import {MatChip} from "@angular/material/chips";
 import {MatCheckbox} from "@angular/material/checkbox";
 import {NgStyle} from "@angular/common";
-import {NoteeditComponent} from "./components/noteedit.component";
-import {RemindereditComponent} from "./components/reminderedit.component";
+import {NoteEditComponent} from "./components/edit/note-edit.component";
+import {ReminderEditComponent} from "./components/edit/reminder-edit.component";
 import {MatTab, MatTabGroup} from "@angular/material/tabs";
 import {MatToolbar} from "@angular/material/toolbar";
-import {StateService} from "./api/state.service";
+import {Monitor, StateService} from "./api/state.service";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
-
-interface NoteMessage {
-    type: 'D' | 'C' | 'E' | 'ER' | 'DR' | 'L';
-    note?: Note;
-    reminder?: Reminder;
-}
-
-interface RemMessage {
-    type: 'D' | 'C' | 'E' | 'L';
-    reminder?: Reminder;
-}
+import {TagCreationComponent} from "./components/create/tag-creation.components";
+import {TagEditComponent} from "./components/edit/tag-edit.components";
+import {MatFormField, MatInput} from "@angular/material/input";
+import {MatLabel} from "@angular/material/form-field";
+import {FormControl, ReactiveFormsModule} from "@angular/forms";
+import {debounceTime} from "rxjs";
 
 @Component({
     selector: 'td-root',
-    imports: [RouterOutlet, NoteformComponent, ReminderformComponent, MatCard, MatCardHeader, MatCardContent, MatCardActions, MatButton, MatCardTitle, MatGridList, MatGridTile, MatChip, MatDivider, MatCheckbox, NgStyle, NoteeditComponent, RemindereditComponent, MatTabGroup, MatTab, MatToolbar, MatProgressSpinner,],
+    imports: [
+        RouterOutlet,
+        NoteCreationComponent,
+        ReminderCreationComponent,
+        MatCard,
+        MatCardHeader,
+        MatCardContent,
+        MatCardActions,
+        MatButton,
+        MatCardTitle,
+        MatGridList,
+        MatGridTile,
+        MatChip,
+        MatDivider,
+        MatCheckbox,
+        NgStyle,
+        NoteEditComponent,
+        ReminderEditComponent,
+        MatTabGroup,
+        MatTab,
+        MatToolbar,
+        MatProgressSpinner,
+        TagCreationComponent,
+        NoteEditComponent,
+        TagEditComponent,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        ReactiveFormsModule,
+    ],
     template: `
         <mat-toolbar>
-            <span>Welcome to {{ title() }}</span>
+            <span>Welcome to your notes</span>
             @if (StateService.working()) {
                 <span class="spacer"></span>
                 <mat-spinner diameter="23"></mat-spinner>
             }
         </mat-toolbar>
-
 
         <mat-tab-group>
             <mat-tab label="Notes">
@@ -64,31 +87,37 @@ interface RemMessage {
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
                                             <div class="buttons">
-                                                <button (click)="stateService.removeReminder(note.id, reminder.id)" matButton [disabled]="StateService.working()">remove
+                                                <button (click)="stateService.removeReminder(note.id, reminder.id)"
+                                                        matButton [disabled]="Monitor.waitingOnExcl()">remove
                                                 </button>
                                                 @if (!reminder.done) {
-                                                    <button matButton (click)="stateService.completeReminder(reminder.id)" [disabled]="StateService.working()">done</button>
+                                                    <button matButton
+                                                            (click)="stateService.completeReminder(reminder.id)"
+                                                            [disabled]="Monitor.waitingOnExcl()">done
+                                                    </button>
                                                 }
-                                                <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
+                                                <mat-checkbox [checked]="reminder.done"
+                                                              [disabled]="true"></mat-checkbox>
                                             </div>
                                         </div>
                                     }
                                 </mat-card-content>
                                 <mat-divider></mat-divider>
                                 <mat-card-actions>
-                                    <note-edit-component [id]="note.id" (refresh)="stateService.updateNotes()"></note-edit-component>
-                                    <button matButton="outlined" (click)="stateService.deleteNote(note.id)" [disabled]="StateService.working()">delete</button>
+                                    <note-edit [id]="note.id"></note-edit>
+                                    <button matButton="outlined" (click)="stateService.deleteNote(note.id)"
+                                            [disabled]="Monitor.waitingOnExcl()">delete
+                                    </button>
                                 </mat-card-actions>
                             </mat-card>
                         </mat-grid-tile>
                     }
                 </mat-grid-list>
 
-                <note-form-component></note-form-component>
+                <note-creation></note-creation>
 
             </mat-tab>
             <mat-tab label="Reminders">
-
 
                 <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="reminderHeight()">
                     @for (reminder of StateService.reminders(); track reminder.id) {
@@ -100,10 +129,15 @@ interface RemMessage {
                                     <span class="date">{{ reminder.date }}</span>
                                 </div>
                                 <div class="buttons buttonsRem">
-                                    <reminder-edit-component [id]="reminder.id"></reminder-edit-component>
-                                    <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined" [disabled]="StateService.working()">delete</button>
+                                    <reminder-edit [id]="reminder.id"></reminder-edit>
+                                    <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined"
+                                            [disabled]="Monitor.waitingOnExcl()">delete
+                                    </button>
                                     @if (!reminder.done) {
-                                        <button matButton="outlined" (click)="stateService.completeReminder(reminder.id)" [disabled]="StateService.working()">done</button>
+                                        <button matButton="outlined"
+                                                (click)="stateService.completeReminder(reminder.id)"
+                                                [disabled]="Monitor.waitingOnExcl()">done
+                                        </button>
                                     }
                                     <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
                                 </div>
@@ -112,15 +146,32 @@ interface RemMessage {
                     }
                 </mat-grid-list>
 
-                <reminder-form-component></reminder-form-component>
+                <reminder-creation></reminder-creation>
             </mat-tab>
-            
+
             <mat-tab label="Tags">
-                
+                <div class="tagContainer">
+                    @for (tag of StateService.tags(); track tag.id) {
+                        <tag-edit class="tag" [tag]="tag">{{ tag.name }}</tag-edit>
+                    }
+                </div>
+
+                <tag-creation></tag-creation>
             </mat-tab>
-            
+
             <mat-tab label="Search">
-                
+                <mat-form-field class="searchbar">
+                    <mat-label>Search</mat-label>
+                    <input matInput [formControl]="search">
+                </mat-form-field>
+
+                @for (note of searchResultsNotes(); track note.id) {
+                    <p>{{ note.description }}</p>
+                }
+
+                @for (reminder of searchResultsReminders(); track reminder.id) {
+                    <p>{{ reminder.title }}</p>
+                }
             </mat-tab>
         </mat-tab-group>
 
@@ -130,12 +181,8 @@ interface RemMessage {
     `,
 })
 export class App {
-    protected readonly title = signal('notes');
 
-    protected readonly noteService: NoteService;
-    protected readonly reminderService: ReminderService;
-    protected readonly stateService: StateService;
-
+    search = new FormControl('');
     protected readonly cols = signal(3);
     protected readonly reminderHeight = computed(() => {
         return {'height': (Math.ceil(StateService.reminders().length / this.cols()) * 10) + 'rem'};
@@ -147,14 +194,17 @@ export class App {
             return {'height': (Math.ceil(StateService.notes().length / this.cols()) * 16) + 'rem'};
         }
     });
+    protected readonly searchResultsNotes: WritableSignal<Note[]> = signal([]);
+    protected readonly searchResultsReminders: WritableSignal<Reminder[]> = signal([]);
 
-    constructor(protected readonly nService: NoteService, protected readonly rService: ReminderService, protected readonly sService: StateService) {
-        this.noteService = nService;
-        this.reminderService = rService;
-        this.stateService = sService
+    protected readonly StateService = StateService;
+    protected readonly Monitor = Monitor;
 
+    constructor(protected readonly stateService: StateService) {
         this.cols.update(_ => this.calculateCols())
-        setTimeout(() => this.title.set("your notes"), 2000)
+        this.searchResultsNotes.update(_ => StateService.notes())
+        this.searchResultsReminders.update(_ => StateService.reminders())
+        this.search.valueChanges.pipe(debounceTime(500)).subscribe(value => this.updateResults(value));
     }
 
     @HostListener('window:resize', ['$event'])
@@ -166,5 +216,26 @@ export class App {
         return Math.floor(window.innerWidth / 400)
     }
 
-    protected readonly StateService = StateService;
+    updateResults(searchTerm: string | null) {
+        if (searchTerm != undefined) {
+            if (!searchTerm.startsWith('tag:')) {
+                const regex = new RegExp(searchTerm, 'i');
+                console.log(regex)
+                this.searchResultsNotes.update(_ => StateService.notes().filter(n => regex.exec(n.name) != undefined || regex.exec(n.description) != undefined));
+                this.searchResultsReminders.update(_ => StateService.reminders().filter(n => regex.exec(n.title) != undefined));
+            } else {
+                if (searchTerm.includes(';')) {
+                    const tag = searchTerm.substring(searchTerm.indexOf(':') + 1, searchTerm.indexOf(';')).trim();
+                    const other = searchTerm.substring(searchTerm.indexOf(';') + 1).trim();
+                    const regex = new RegExp(other, 'i');
+                    this.searchResultsNotes.update(_ => StateService.notes().filter(n => (regex.exec(n.name) != undefined || regex.exec(n.description) != undefined) && n.category == tag));
+                    this.searchResultsReminders.update(_ => StateService.reminders().filter(r => regex.exec(r.title) != undefined && r.category.trim() == tag.trim()));
+                } else {
+                    const tag = searchTerm.substring(searchTerm.indexOf(':') + 1).trim();
+                    this.searchResultsNotes.update(_ => StateService.notes().filter(n => n.category == tag));
+                    this.searchResultsReminders.update(_ => StateService.reminders().filter(r => r.category.trim() == tag.trim()));
+                }
+            }
+        }
+    }
 }
