@@ -128,6 +128,7 @@ import {debounceTime} from "rxjs";
                                     <mat-chip>{{ reminder.category }}</mat-chip>
                                     <span class="date">{{ reminder.date }}</span>
                                 </div>
+                                <mat-divider></mat-divider>
                                 <div class="buttons buttonsRem">
                                     <reminder-edit [id]="reminder.id"></reminder-edit>
                                     <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined"
@@ -165,13 +166,80 @@ import {debounceTime} from "rxjs";
                     <input matInput [formControl]="search">
                 </mat-form-field>
 
-                @for (note of searchResultsNotes(); track note.id) {
-                    <p>{{ note.description }}</p>
-                }
+                <mat-grid-list [cols]="1" rowHeight="fit" [ngStyle]="noteSearchHeight()" class="searchRes">
+                    @for (note of searchResultsNotes(); track note.id) {
+                        <mat-grid-tile>
+                            <mat-card appearance="outlined" class="card">
+                                <mat-card-header>
+                                    <mat-card-title>{{ note.name }}</mat-card-title>
+                                    <mat-chip>{{ note.category }}</mat-chip>
+                                </mat-card-header>
+                                <mat-divider></mat-divider>
+                                <mat-card-content>
+                                    <p class="desc">{{ note.description }}</p>
+                                    @for (reminder of note.reminders; track reminder.id) {
+                                        <mat-divider></mat-divider>
+                                        <div class="reminderItem">
+                                            <div class="header">
+                                                <span>{{ reminder.title }}</span>
+                                                <mat-chip>{{ reminder.category }}</mat-chip>
+                                                <span class="date">{{ reminder.date }}</span>
+                                            </div>
+                                            <div class="buttons">
+                                                <button (click)="stateService.removeReminder(note.id, reminder.id)"
+                                                        matButton [disabled]="Monitor.waitingOnExcl()">remove
+                                                </button>
+                                                @if (!reminder.done) {
+                                                    <button matButton
+                                                            (click)="stateService.completeReminder(reminder.id)"
+                                                            [disabled]="Monitor.waitingOnExcl()">done
+                                                    </button>
+                                                }
+                                                <mat-checkbox [checked]="reminder.done"
+                                                              [disabled]="true"></mat-checkbox>
+                                            </div>
+                                        </div>
+                                    }
+                                </mat-card-content>
+                                <mat-divider></mat-divider>
+                                <mat-card-actions>
+                                    <note-edit [id]="note.id"></note-edit>
+                                    <button matButton="outlined" (click)="stateService.deleteNote(note.id)"
+                                            [disabled]="Monitor.waitingOnExcl()">delete
+                                    </button>
+                                </mat-card-actions>
+                            </mat-card>
+                        </mat-grid-tile>
+                    }
+                </mat-grid-list>
 
-                @for (reminder of searchResultsReminders(); track reminder.id) {
-                    <p>{{ reminder.title }}</p>
-                }
+                <mat-grid-list [cols]="1" rowHeight="fit" [ngStyle]="reminderSearchHeight()" class="searchRes">
+                    @for (reminder of searchResultsReminders(); track reminder.id) {
+                        <mat-grid-tile>
+                            <mat-card class="reminderItem card" appearance="outlined">
+                                <div class="header">
+                                    <span class="title">{{ reminder.title }}</span>
+                                    <mat-chip>{{ reminder.category }}</mat-chip>
+                                    <span class="date">{{ reminder.date }}</span>
+                                </div>
+                                <mat-divider></mat-divider>
+                                <div class="buttons buttonsRem">
+                                    <reminder-edit [id]="reminder.id"></reminder-edit>
+                                    <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined"
+                                            [disabled]="Monitor.waitingOnExcl()">delete
+                                    </button>
+                                    @if (!reminder.done) {
+                                        <button matButton="outlined"
+                                                (click)="stateService.completeReminder(reminder.id)"
+                                                [disabled]="Monitor.waitingOnExcl()">done
+                                        </button>
+                                    }
+                                    <mat-checkbox [checked]="reminder.done" [disabled]="true"></mat-checkbox>
+                                </div>
+                            </mat-card>
+                        </mat-grid-tile>
+                    }
+                </mat-grid-list>
             </mat-tab>
         </mat-tab-group>
 
@@ -185,7 +253,7 @@ export class App {
     search = new FormControl('');
     protected readonly cols = signal(3);
     protected readonly reminderHeight = computed(() => {
-        return {'height': (Math.ceil(StateService.reminders().length / this.cols()) * 10) + 'rem'};
+        return {'height': (Math.ceil(StateService.reminders().length / this.cols()) * 11) + 'rem'};
     });
     protected readonly noteHeight = computed(() => {
         try {
@@ -196,6 +264,16 @@ export class App {
     });
     protected readonly searchResultsNotes: WritableSignal<Note[]> = signal([]);
     protected readonly searchResultsReminders: WritableSignal<Reminder[]> = signal([]);
+    protected readonly reminderSearchHeight = computed(() => {
+        return {'height': (Math.ceil(this.searchResultsReminders().length / this.cols()) * 11) + 'rem'};
+    });
+    protected readonly noteSearchHeight = computed(() => {
+        try {
+            return {'height': (Math.ceil(this.searchResultsNotes().length) * (16 + (8 * (this.searchResultsNotes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), this.searchResultsNotes().at(0)!)).reminders.length))) + 'rem'};
+        } catch (error) {
+            return {'height': (Math.ceil(this.searchResultsNotes().length) * 16) + 'rem'};
+        }
+    });
 
     protected readonly StateService = StateService;
     protected readonly Monitor = Monitor;

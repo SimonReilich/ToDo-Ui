@@ -31,11 +31,13 @@ html {
 
 .card {
   padding: 0.5em;
-  margin-top: 0;
-  margin-bottom: 1rem;
-  margin-right: 1rem;
+  margin: 0;
   width: calc(100% - 1rem);
   height: calc(100% - 1rem);
+
+  mat-chip {
+    transform: translateY(-3px);
+  }
 }
 
 .sheetForm {
@@ -89,6 +91,10 @@ mat-chip {
       position: absolute;
       right: 1.5rem;
     }
+
+    mat-chip {
+      transform: translateY(0.5px);
+    }
   }
 
   .buttons {
@@ -129,6 +135,7 @@ h2 {
 
 .buttonsRem {
   margin-left: 1rem;
+  margin-top: 1rem;
 }
 
 mat-grid-list {
@@ -169,9 +176,19 @@ mat-spinner {
 
 .searchbar {
   width: calc(100vw - 2rem);
-  max-width: calc(800px + 1rem);
+  max-width: calc(600px + 1rem);
   margin-block: 1rem;
-  margin-inline: calc(50vw - min(50vw - 1rem, 400px + 0.5rem));
+  margin-top: 2rem;
+  margin-inline: calc(50vw - min(50vw - 1rem, 300px + 0.5rem));
+}
+
+.searchRes {
+  width: calc(100vw - 2rem);
+  max-width: calc(600px + 1rem);
+  margin-block: 1rem;
+  margin-inline: calc(50vw - min(50vw - 1rem, 300px + 0.5rem));
+  margin-top: 0;
+  margin-bottom: 2rem;
 }
 
 html, body { padding-inline: 0;}
