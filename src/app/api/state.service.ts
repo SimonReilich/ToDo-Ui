@@ -22,7 +22,7 @@ export class StateService {
     public static readonly notes: WritableSignal<Note[]> = signal([])
     public static readonly reminders: WritableSignal<Reminder[]> = signal([])
     public static readonly working: WritableSignal<boolean> = signal(false)
-    public static readonly delay: number = 0
+    public static readonly delay: number = 2_000
     protected readonly noteService: NoteService;
     protected readonly reminderService: ReminderService;
 
@@ -112,11 +112,19 @@ export class StateService {
         StateService.working.update(_ => true)
         const reminder = StateService.reminders().find(r => r.id == id)
         StateService.reminders.update(v => v.filter(r => r.id != id))
+        StateService.notes.update(v => v.map(n => {
+            return {
+                id: n.id,
+                name: n.name,
+                description: n.description,
+                category: n.category,
+                reminders: n.reminders.filter(r => r.id != id)
+            }
+        }))
         this.reminderService.delete(id).pipe(catchError(error => {
             this.addReminderSilent(reminder!)
             return error
         })).subscribe(_ => StateService.working.update(_ => false))
-        await this.updateNotes()
     }
 
     async editNote(note: Note) {
@@ -147,11 +155,25 @@ export class StateService {
                 return r
             }
         }))
+        StateService.notes.update(v => v.map(n => {
+            return {
+                id: n.id,
+                name: n.name,
+                description: n.description,
+                category: n.category,
+                reminders: n.reminders.map(r => {
+                    if (r.id == reminder.id) {
+                        return reminder
+                    } else {
+                        return r
+                    }
+                })
+            }
+        }))
         this.reminderService.update(reminder).pipe(catchError(error => {
             this.editReminderSilent(oldReminder!)
             return error
         })).subscribe(_ => StateService.working.update(_ => false))
-        await this.updateNotes()
     }
 
     async completeReminder(id: number) {
@@ -170,11 +192,35 @@ export class StateService {
                 return r
             }
         }))
+        StateService.notes.update(v => v.map(n => {
+            if (n.reminders.some(r => r.id == id)) {
+                return {
+                    id: n.id,
+                    name: n.name,
+                    description: n.description,
+                    category: n.category,
+                    reminders: n.reminders.map(r => {
+                        if (r.id == id) {
+                            return {
+                                id: r.id,
+                                title: r.title,
+                                category: r.category,
+                                date: r.date,
+                                done: true,
+                            }
+                        } else {
+                            return r
+                        }
+                    })
+                }
+            } else {
+                return n
+            }
+        }))
         this.reminderService.complete(id).pipe(catchError(error => {
             this.uncompleteReminderSilent(id)
             return error
         })).subscribe(_ => StateService.working.update(_ => false))
-        await this.updateNotes()
     }
 
     async assignReminder(id: number, rId: number) {
@@ -182,7 +228,7 @@ export class StateService {
         StateService.working.update(_ => true)
         const reminder = StateService.reminders().find(r => r.id == rId)
         StateService.notes.update(v => v.map(n => {
-            if (n.id == id && n.reminders.some(r => r.id == rId)) {
+            if (n.id == id) {
                 return {
                     id: n.id,
                     name: n.name,
@@ -198,7 +244,6 @@ export class StateService {
             this.removeReminderSilent(id, rId)
             return error
         })).subscribe(_ => StateService.working.update(_ => false))
-        await this.updateNotes()
     }
 
     async removeReminder(id: number, rId: number) {
@@ -221,7 +266,6 @@ export class StateService {
             this.assignReminderSilent(id, rId)
             return error
         })).subscribe(_ => StateService.working.update(_ => false))
-        await this.updateNotes()
     }
 
     getNoteById(id: number) {
