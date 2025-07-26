@@ -71,7 +71,9 @@ import {debounceTime} from "rxjs";
                             <mat-card appearance="outlined" class="card">
                                 <mat-card-header>
                                     <mat-card-title>{{ note.name }}</mat-card-title>
-                                    <mat-chip>{{ note.category }}</mat-chip>
+                                    @if (note.tag != undefined) {
+                                        <mat-chip>{{ note.tag.name }}</mat-chip>
+                                    }
                                 </mat-card-header>
                                 <mat-divider></mat-divider>
                                 <mat-card-content>
@@ -81,7 +83,9 @@ import {debounceTime} from "rxjs";
                                         <div class="reminderItem">
                                             <div class="header">
                                                 <span>{{ reminder.title }}</span>
-                                                <mat-chip>{{ reminder.category }}</mat-chip>
+                                                @if (reminder.tag != undefined) {
+                                                    <mat-chip>{{ reminder.tag.name }}</mat-chip>
+                                                }
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
                                             <div class="buttons">
@@ -123,7 +127,9 @@ import {debounceTime} from "rxjs";
                             <mat-card class="reminderItem card" appearance="outlined">
                                 <div class="header">
                                     <span class="title">{{ reminder.title }}</span>
-                                    <mat-chip>{{ reminder.category }}</mat-chip>
+                                    @if (reminder.tag != undefined) {
+                                        <mat-chip>{{ reminder.tag.name }}</mat-chip>
+                                    }
                                     <span class="date">{{ reminder.date }}</span>
                                 </div>
                                 <mat-divider></mat-divider>
@@ -170,7 +176,9 @@ import {debounceTime} from "rxjs";
                             <mat-card appearance="outlined" class="card">
                                 <mat-card-header>
                                     <mat-card-title>{{ note.name }}</mat-card-title>
-                                    <mat-chip>{{ note.category }}</mat-chip>
+                                    @if (note.tag != undefined) {
+                                        <mat-chip>{{ note.tag.name }}</mat-chip>
+                                    }
                                 </mat-card-header>
                                 <mat-divider></mat-divider>
                                 <mat-card-content>
@@ -180,7 +188,9 @@ import {debounceTime} from "rxjs";
                                         <div class="reminderItem">
                                             <div class="header">
                                                 <span>{{ reminder.title }}</span>
-                                                <mat-chip>{{ reminder.category }}</mat-chip>
+                                                @if (reminder.tag != undefined) {
+                                                    <mat-chip>{{ reminder.tag.name }}</mat-chip>
+                                                }
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
                                             <div class="buttons">
@@ -217,7 +227,9 @@ import {debounceTime} from "rxjs";
                             <mat-card class="reminderItem card" appearance="outlined">
                                 <div class="header">
                                     <span class="title">{{ reminder.title }}</span>
-                                    <mat-chip>{{ reminder.category }}</mat-chip>
+                                    @if (reminder.tag != undefined) {
+                                        <mat-chip>{{ reminder.tag.name }}</mat-chip>
+                                    }
                                     <span class="date">{{ reminder.date }}</span>
                                 </div>
                                 <mat-divider></mat-divider>
@@ -286,7 +298,7 @@ export class App {
     protected readonly searchTerm = signal('')
     protected readonly searchTag = signal('')
     protected readonly reminderSearchHeight = computed(() => {
-        return {'height': (Math.ceil(this.searchResultsReminders().length / this.cols()) * 11) + 'rem'};
+        return {'height': (Math.ceil(this.searchResultsReminders().length) * 11) + 'rem'};
     });
     protected readonly noteSearchHeight = computed(() => {
         try {

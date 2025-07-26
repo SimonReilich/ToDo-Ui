@@ -3,6 +3,7 @@ import {HttpClient} from "@angular/common/http";
 import {delay, Observable} from "rxjs";
 import {Reminder} from "./reminder.service";
 import {StateService} from "./state.service";
+import {Tag} from "./tag.service";
 
 export interface Note {
   id: number;
@@ -10,6 +11,7 @@ export interface Note {
   description: string;
   reminders: Reminder[];
   category: string;
+  tag?: Tag;
 }
 
 @Injectable({
@@ -31,7 +33,8 @@ export class NoteService {
       name: note.name,
       description: note.description,
       reminders: note.reminders,
-      category: note.category
+      category: note.category,
+      tag: note.tag
     }).pipe(delay(StateService.delay))
   }
 

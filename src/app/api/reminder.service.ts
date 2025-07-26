@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {delay, Observable} from "rxjs";
 import {StateService} from "./state.service";
+import {Tag} from "./tag.service";
 
 export interface Reminder {
     id: number;
@@ -9,6 +10,7 @@ export interface Reminder {
     date: string;
     category: string;
     done: boolean;
+    tag?: Tag;
 }
 
 @Injectable({
@@ -31,6 +33,7 @@ export class ReminderService {
             date: reminder.date,
             category: reminder.category,
             done: reminder.done,
+            tag: reminder.tag
         }).pipe(delay(StateService.delay))
     }
 

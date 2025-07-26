@@ -1,5 +1,5 @@
 import {Component, inject, signal} from '@angular/core';
-import {FormControl, ReactiveFormsModule} from '@angular/forms';
+import {Form, FormControl, ReactiveFormsModule} from '@angular/forms';
 import {MatButton, MatFabButton} from "@angular/material/button";
 import {MatFormField, MatInput} from "@angular/material/input";
 import {MatLabel} from "@angular/material/form-field";
@@ -46,10 +46,12 @@ export class NoteCreationComponent {
                 <textarea matInput type="text" id="desc" [formControl]="desc" required></textarea>
             </mat-form-field>
             <mat-form-field>
-                <mat-label>category</mat-label>
-                <mat-select [formControl]="category">
-                    <mat-option value="ToDo">ToDo</mat-option>
-                    <mat-option value="Important">Important</mat-option>
+                <mat-label>tag</mat-label>
+                <mat-select [formControl]="tag">
+                    <mat-option [value]="-1">no tag</mat-option>
+                    @for (tag of StateService.tags(); track tag.id) {
+                        <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
+                    }
                 </mat-select>
             </mat-form-field>
         </form>
@@ -70,7 +72,7 @@ export class NoteCreationComponent {
 export class CreateNoteSheet {
     title = new FormControl('');
     desc = new FormControl('');
-    category = new FormControl('ToDo');
+    tag = new FormControl(-1);
 
     waiting = signal(false)
 
@@ -86,8 +88,11 @@ export class CreateNoteSheet {
             name: this.title.value!.trim(),
             description: this.desc.value!.trim(),
             reminders: [],
-            category: this.category.value!,
+            category: 'ToDo',
+            tag: this.stateService.getTagById(this.tag.value!),
         })
         this._bottomSheetRef.dismiss()
     }
+
+    protected readonly StateService = StateService;
 }

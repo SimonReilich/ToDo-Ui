@@ -38,6 +38,10 @@ html {
   mat-chip {
     transform: translateY(-3px);
   }
+
+  mat-card-title {
+    margin-bottom: 2rem;
+  }
 }
 
 .sheetForm {
@@ -122,6 +126,10 @@ mat-chip {
 
 .title {
   margin-left: 1rem;
+}
+
+.header {
+  min-height: 3.8rem;
 }
 
 h1 {

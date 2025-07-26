@@ -64,7 +64,7 @@ export class StateService {
         StateService.working.update(_ => true)
         StateService.notes.update(v => [...v, note])
         this.noteService.create(note).pipe(catchError(error => {
-            this.deleteNoteSilent(note.id)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -90,7 +90,7 @@ export class StateService {
         StateService.working.update(_ => true)
         StateService.reminders.update(v => [...v, reminder])
         this.reminderService.create(reminder).pipe(catchError(error => {
-            this.deleteReminderSilent(reminder.id)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -116,7 +116,7 @@ export class StateService {
         StateService.working.update(_ => true)
         StateService.tags.update(v => [...v, tag])
         this.tagService.create(tag).pipe(catchError(error => {
-            this.deleteTagSilent(tag.id)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -140,10 +140,9 @@ export class StateService {
         const lock = Monitor.request();
         await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
-        const note = StateService.notes().find(n => n.id == id)
         StateService.notes.update(v => v.filter(n => n.id != id))
         this.noteService.delete(id).pipe(catchError(error => {
-            this.addNoteSilent(note!)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -158,7 +157,6 @@ export class StateService {
         const lock = Monitor.request();
         await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
-        const reminder = StateService.reminders().find(r => r.id == id)
         StateService.reminders.update(v => v.filter(r => r.id != id))
         StateService.notes.update(v => v.map(n => {
             return {
@@ -166,11 +164,12 @@ export class StateService {
                 name: n.name,
                 description: n.description,
                 category: n.category,
-                reminders: n.reminders.filter(r => r.id != id)
+                reminders: n.reminders.filter(r => r.id != id),
+                tag: n.tag
             }
         }))
         this.reminderService.delete(id).pipe(catchError(error => {
-            this.addReminderSilent(reminder!)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -184,10 +183,29 @@ export class StateService {
         const lock = Monitor.request();
         await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
-        const tag = StateService.tags().find(n => n.id == id)
-        StateService.tags.update(v => v.filter(n => n.id != id))
+        StateService.tags.update(v => v.filter(t => t.id != id))
+        StateService.notes.update(v => v.map(n => {
+            return {
+                id: n.id,
+                name: n.name,
+                description: n.description,
+                category: n.category,
+                reminders: n.reminders,
+                tag: (n.tag != undefined && n.tag.id == id) ? undefined : n.tag
+            }
+        }))
+        StateService.reminders.update(v => v.map(r => {
+            return {
+                id: r.id,
+                title: r.title,
+                date: r.date,
+                category: r.category,
+                done: r.done,
+                tag: (r.tag != undefined && r.tag.id == id) ? undefined : r.tag
+            }
+        }))
         this.tagService.delete(id).pipe(catchError(error => {
-            this.addTagSilent(tag!)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -201,7 +219,6 @@ export class StateService {
         const lock = Monitor.request();
         await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
-        const oldNote = StateService.notes().find(n => n.id == note.id)
         StateService.notes.update(v => v.map(n => {
             if (n.id == note.id) {
                 return note
@@ -210,7 +227,7 @@ export class StateService {
             }
         }))
         this.noteService.update(note).pipe(catchError(error => {
-            this.editNoteSilent(oldNote!)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -224,7 +241,6 @@ export class StateService {
         const lock = Monitor.request();
         await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
-        const oldReminder = StateService.reminders().find(r => r.id == reminder.id)
         StateService.reminders.update(v => v.map(r => {
             if (r.id == reminder.id) {
                 return reminder
@@ -244,11 +260,12 @@ export class StateService {
                     } else {
                         return r
                     }
-                })
+                }),
+                tag: n.tag
             }
         }))
         this.reminderService.update(reminder).pipe(catchError(error => {
-            this.editReminderSilent(oldReminder!)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -262,7 +279,6 @@ export class StateService {
         const lock = Monitor.request();
         await waitUntil(() => Monitor.canWork(lock));
         StateService.working.update(_ => true)
-        const oldTag = StateService.tags().find(t => t.id == tag.id)
         StateService.tags.update(v => v.map(t => {
             if (t.id == tag.id) {
                 return tag
@@ -270,8 +286,28 @@ export class StateService {
                 return t
             }
         }))
+        StateService.notes.update(v => v.map(n => {
+            return {
+                id: n.id,
+                name: n.name,
+                description: n.description,
+                category: n.category,
+                reminders: n.reminders,
+                tag: (n.tag != undefined && n.tag.id == tag.id) ? tag : n.tag
+            }
+        }))
+        StateService.reminders.update(v => v.map(r => {
+            return {
+                id: r.id,
+                title: r.title,
+                date: r.date,
+                category: r.category,
+                done: r.done,
+                tag: (r.tag != undefined && r.tag.id == tag.id) ? tag : r.tag
+            }
+        }))
         this.tagService.update(tag).pipe(catchError(error => {
-            this.editTagSilent(oldTag!)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -293,6 +329,7 @@ export class StateService {
                     category: r.category,
                     date: r.date,
                     done: true,
+                    tag: r.tag
                 }
             } else {
                 return r
@@ -313,6 +350,7 @@ export class StateService {
                                 category: r.category,
                                 date: r.date,
                                 done: true,
+                                tag: r.tag
                             }
                         } else {
                             return r
@@ -324,7 +362,7 @@ export class StateService {
             }
         }))
         this.reminderService.complete(id).pipe(catchError(error => {
-            this.uncompleteReminderSilent(id)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -347,13 +385,14 @@ export class StateService {
                     description: n.description,
                     category: n.category,
                     reminders: [...n.reminders, reminder!],
+                    tag: n.tag
                 }
             } else {
                 return n
             }
         }))
         this.noteService.addReminder(id, rId).pipe(catchError(error => {
-            this.removeReminderSilent(id, rId)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -375,13 +414,14 @@ export class StateService {
                     description: n.description,
                     category: n.category,
                     reminders: n.reminders.filter(r => r.id != rId),
+                    tag: n.tag
                 }
             } else {
                 return n
             }
         }))
         this.noteService.removeReminder(id, rId).pipe(catchError(error => {
-            this.assignReminderSilent(id, rId)
+            this.updateTags()
             StateService.working.update(_ => false)
             Monitor.leave(lock)
             return error
@@ -392,7 +432,39 @@ export class StateService {
     }
 
     async mergeTags(id1: number, id2: number) {
-        await this.deleteTag(id2)
+        const lock = Monitor.request();
+        await waitUntil(() => Monitor.canWork(lock));
+        StateService.working.update(_ => true)
+        StateService.notes.update(v => v.map(n => {
+            return {
+                id: n.id,
+                name: n.name,
+                description: n.description,
+                category: n.category,
+                reminders: n.reminders,
+                tag: (n.tag != undefined && n.tag.id == id2) ? this.getTagById(id1) : n.tag
+            }
+        }))
+        StateService.reminders.update(v => v.map(r => {
+            return {
+                id: r.id,
+                title: r.title,
+                date: r.date,
+                category: r.category,
+                done: r.done,
+                tag: (r.tag != undefined && r.tag.id == id2) ? this.getTagById(id1) : r.tag
+            }
+        }))
+        StateService.tags.update(v => v.filter(t => t.id != id2))
+        this.tagService.merge(id1, id2).pipe(catchError(error => {
+            this.updateTags()
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+            return error
+        })).subscribe(_ => {
+            StateService.working.update(_ => false)
+            Monitor.leave(lock)
+        });
     }
 
     getNoteById(id: number) {
@@ -405,109 +477,6 @@ export class StateService {
 
     getTagById(id: number) {
         return StateService.tags().find(t => t.id == id)
-    }
-
-    private addNoteSilent(note: Note) {
-        StateService.notes.update(v => [...v, note])
-    }
-
-    private addReminderSilent(reminder: Reminder) {
-        StateService.reminders.update(v => [...v, reminder])
-    }
-
-    private addTagSilent(tag: Tag) {
-        StateService.tags.update(v => [...v, tag])
-    }
-
-    private deleteNoteSilent(id: number) {
-        StateService.reminders.update(v => v.filter(n => n.id != id))
-    }
-
-    private deleteReminderSilent(id: number) {
-        StateService.reminders.update(v => v.filter(r => r.id != id))
-    }
-
-    private deleteTagSilent(id: number) {
-        StateService.tags.update(v => v.filter(t => t.id != id))
-    }
-
-    private editNoteSilent(note: Note) {
-        StateService.notes.update(v => v.map(n => {
-            if (n.id == note.id) {
-                return note
-            } else {
-                return n
-            }
-        }))
-    }
-
-    private editReminderSilent(reminder: Reminder) {
-        StateService.reminders.update(v => v.map(r => {
-            if (r.id == reminder.id) {
-                return reminder
-            } else {
-                return r
-            }
-        }))
-    }
-
-    private editTagSilent(tag: Tag) {
-        StateService.tags.update(v => v.map(t => {
-            if (t.id == tag.id) {
-                return tag
-            } else {
-                return t
-            }
-        }))
-    }
-
-    private uncompleteReminderSilent(id: number) {
-        StateService.reminders.update(v => v.map(r => {
-            if (r.id == id) {
-                return {
-                    id: r.id,
-                    title: r.title,
-                    category: r.category,
-                    date: r.date,
-                    done: false,
-                }
-            } else {
-                return r
-            }
-        }))
-    }
-
-    private assignReminderSilent(id: number, rId: number) {
-        const reminder = StateService.reminders().find(r => r.id == rId)
-        StateService.notes.update(v => v.map(n => {
-            if (n.id == id && n.reminders.some(r => r.id == rId)) {
-                return {
-                    id: n.id,
-                    name: n.name,
-                    description: n.description,
-                    category: n.category,
-                    reminders: [...n.reminders, reminder!],
-                }
-            } else {
-                return n
-            }
-        }))
-    }
-
-    private removeReminderSilent(id: number, rId: number) {
-        StateService.notes.update(v => v.map(n => {
-            if (n.id == id) {
-                return {
-                    id: n.id,
-                    name: n.name,
-                    description: n.description,
-                    category: n.category,
-                    reminders: n.reminders.filter(r => r.id != rId),
-                }
-            } else {
-                return n
-            }
-        }))
     }
 }
 
