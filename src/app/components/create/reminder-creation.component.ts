@@ -66,10 +66,12 @@ export class ReminderCreationComponent {
             </mat-form-field>
 
             <mat-form-field>
-                <mat-label>category</mat-label>
-                <mat-select [formControl]="category">
-                    <mat-option value="ToDo">ToDo</mat-option>
-                    <mat-option value="Important">Important</mat-option>
+                <mat-label>tag</mat-label>
+                <mat-select [formControl]="tag">
+                    <mat-option [value]="-1">no tag</mat-option>
+                    @for (tag of StateService.tags(); track tag.id) {
+                        <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
+                    }
                 </mat-select>
             </mat-form-field>
         </form>
@@ -100,7 +102,7 @@ export class ReminderCreationComponent {
 export class CreateReminderSheet {
 
     title = new FormControl('');
-    category = new FormControl('ToDo');
+    tag = new FormControl(-1);
     value: Date = new Date();
 
     private _bottomSheetRef =
@@ -112,10 +114,12 @@ export class CreateReminderSheet {
         this.stateService.addReminder({
             id: -1,
             title: this.title.value!.trim(),
-            category: this.category.value!,
             date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0'),
-            done: false
+            done: false,
+            tag: this.stateService.getTagById(this.tag.value!),
         })
         this._bottomSheetRef.dismiss()
     }
+
+    protected readonly StateService = StateService;
 }

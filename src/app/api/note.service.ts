@@ -10,7 +10,6 @@ export interface Note {
   name: string;
   description: string;
   reminders: Reminder[];
-  category: string;
   tag?: Tag;
 }
 
@@ -33,7 +32,6 @@ export class NoteService {
       name: note.name,
       description: note.description,
       reminders: note.reminders,
-      category: note.category,
       tag: note.tag
     }).pipe(delay(StateService.delay))
   }

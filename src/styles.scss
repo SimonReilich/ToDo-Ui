@@ -199,5 +199,19 @@ mat-spinner {
   margin-bottom: 2rem;
 }
 
+.warning {
+  width: calc(100vw - 2rem);
+  max-width: calc(600px + 1rem);
+  margin-block: 1rem;
+  margin-inline: calc(50vw - min(50vw - 1rem, 300px + 0.5rem));
+  margin-top: 0;
+  margin-bottom: 2rem;
+  color: #ff1744;
+
+  .bold {
+    font-weight: bold;
+  }
+}
+
 html, body { padding-inline: 0;}
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }

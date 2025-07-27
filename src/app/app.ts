@@ -21,6 +21,7 @@ import {MatFormField, MatInput} from "@angular/material/input";
 import {MatLabel} from "@angular/material/form-field";
 import {FormControl, ReactiveFormsModule} from "@angular/forms";
 import {debounceTime} from "rxjs";
+import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/material/autocomplete";
 
 @Component({
     selector: 'td-root',
@@ -53,6 +54,9 @@ import {debounceTime} from "rxjs";
         MatLabel,
         MatInput,
         ReactiveFormsModule,
+        MatAutocomplete,
+        MatOption,
+        MatAutocompleteTrigger,
     ],
     template: `
         <mat-toolbar>
@@ -167,11 +171,28 @@ import {debounceTime} from "rxjs";
             <mat-tab label="Search">
                 <mat-form-field class="searchbar">
                     <mat-label>Search</mat-label>
-                    <input matInput [formControl]="search">
+                    <input matInput [formControl]="search" [matAutocomplete]="auto">
                 </mat-form-field>
+                <mat-autocomplete #auto="matAutocomplete">
+                    @for (tag of filteredTags(); track tag.id) {
+                        <mat-option [value]="'tag: ' + tag.name">tag: {{ tag.name }}</mat-option>
+                    }
+                </mat-autocomplete>
+
+                @if (StateService.notes().length == 0 && StateService.reminders().length == 0) {
+                    <p class="warning">You do not have any notes or reminders</p>
+                } @else if (!tagExists() && searchTag() != '') {
+                    <p class="warning">The tag <span class="bold"> {{ searchTag() }} </span> does not exist</p>
+                } @else if (filteredNotes().length == 0 && filteredReminders().length == 0 && !(searchContent().length == 0)) {
+                    <p class="warning">No notes or reminders found that match <span
+                            class="bold"> {{ searchContent() }} </span></p>
+                } @else if (filteredNotes().length == 0 && filteredReminders().length == 0) {
+                    <p class="warning">No notes or reminders with tag <span
+                            class="bold"> {{ searchTag() }} </span> found</p>
+                }
 
                 <mat-grid-list [cols]="1" rowHeight="fit" [ngStyle]="noteSearchHeight()" class="searchRes">
-                    @for (note of searchResultsNotes(); track note.id) {
+                    @for (note of filteredNotes(); track note.id) {
                         <mat-grid-tile>
                             <mat-card appearance="outlined" class="card">
                                 <mat-card-header>
@@ -222,7 +243,7 @@ import {debounceTime} from "rxjs";
                 </mat-grid-list>
 
                 <mat-grid-list [cols]="1" rowHeight="fit" [ngStyle]="reminderSearchHeight()" class="searchRes">
-                    @for (reminder of searchResultsReminders(); track reminder.id) {
+                    @for (reminder of filteredReminders(); track reminder.id) {
                         <mat-grid-tile>
                             <mat-card class="reminderItem card" appearance="outlined">
                                 <div class="header">
@@ -260,60 +281,80 @@ import {debounceTime} from "rxjs";
 })
 export class App {
 
-    search = new FormControl('');
-    protected readonly cols = signal(3);
+    search = new FormControl('')
+    protected readonly cols = signal(3)
     protected readonly reminderHeight = computed(() => {
         return {'height': (Math.ceil(StateService.reminders().length / this.cols()) * 11) + 'rem'};
-    });
+    })
     protected readonly noteHeight = computed(() => {
         try {
             return {'height': (Math.ceil(StateService.notes().length / this.cols()) * (16 + (8 * (StateService.notes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), StateService.notes().at(0)!)).reminders.length))) + 'rem'};
         } catch (error) {
             return {'height': (Math.ceil(StateService.notes().length / this.cols()) * 16) + 'rem'};
         }
-    });
+    })
 
-    protected readonly searchResultsNotes = computed(() => {
-        if (StateService.tags().some(t => t.name == this.searchTag()) && this.searchTerm() == '') {
-            return StateService.notes().filter(n => n.category == this.searchTag())
-        } else if (StateService.tags().some(t => t.name == this.searchTag())) {
-            const regex = new RegExp(this.searchTerm())
-            return StateService.notes().filter(n => (regex.exec(n.name) != undefined || regex.exec(n.description) != undefined) && n.category == this.searchTag())
+    protected readonly searchInput = signal('');
+    protected readonly searchContent = signal('')
+    protected readonly searchTag = signal('')
+    protected readonly tagExists = computed(() => {
+        return StateService.tags().some(t => t.name.toLowerCase().trim() == this.searchTag().toLowerCase().trim());
+    })
+    protected readonly filteredNotes = computed(() => {
+        if (this.searchContent().trim() == '' && this.searchTag().trim() != '') {
+            return StateService.notes().filter(n => n.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim());
+        } else if (this.searchTag().trim() != '') {
+            const regex = new RegExp(this.searchContent(), 'i')
+            return StateService.notes().filter(n => (regex.exec(n.name) != undefined || regex.exec(n.description) != undefined) && n.tag?.name == this.searchTag())
         } else {
-            const regex = new RegExp(this.searchTerm())
+            const regex = new RegExp(this.searchContent(), 'i')
             return StateService.notes().filter(n => regex.exec(n.name) != undefined || regex.exec(n.description) != undefined)
         }
     })
-    protected readonly searchResultsReminders = computed(() => {
-        if (StateService.tags().some(t => t.name == this.searchTag()) && this.searchTerm() == '') {
-            return StateService.reminders().filter(r => r.category == this.searchTag())
-        } else if (StateService.tags().some(t => t.name == this.searchTag())) {
-            const regex = new RegExp(this.searchTerm())
-            return StateService.reminders().filter(n => regex.exec(n.title) != undefined && n.category == this.searchTag())
+    protected readonly filteredReminders = computed(() => {
+        if (this.searchContent().trim() == '' && this.searchTag().trim() != '') {
+            return StateService.reminders().filter(r => r.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim())
+        } else if (this.searchTag().trim() != '') {
+            const regex = new RegExp(this.searchContent(), 'i')
+            return StateService.reminders().filter(n => regex.exec(n.title) != undefined && n.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim())
         } else {
-            const regex = new RegExp(this.searchTerm())
+            const regex = new RegExp(this.searchContent(), 'i')
             return StateService.reminders().filter(n => regex.exec(n.title) != undefined)
         }
     })
-    protected readonly searchTerm = signal('')
-    protected readonly searchTag = signal('')
+    protected readonly filteredTags = computed(() => {
+        if (this.searchInput().includes(';')) {
+            return [];
+        } else if (this.searchInput().length > 4 && !this.searchInput().toLowerCase().startsWith('tag:')) {
+            return [];
+        } else if (this.searchInput().length <= 4 && 'tag:'.startsWith(this.searchInput().toLowerCase().trim())) {
+            return StateService.tags();
+        } else if (this.searchInput().toLowerCase().startsWith('tag:')) {
+            return StateService.tags().filter(t => t.name.toLowerCase().startsWith(this.searchTag().toLowerCase()));
+        } else {
+            return []
+        }
+    })
     protected readonly reminderSearchHeight = computed(() => {
-        return {'height': (Math.ceil(this.searchResultsReminders().length) * 11) + 'rem'};
-    });
+        return {'height': (Math.ceil(this.filteredReminders().length) * 11) + 'rem'};
+    })
     protected readonly noteSearchHeight = computed(() => {
         try {
-            return {'height': (Math.ceil(this.searchResultsNotes().length) * (16 + (8 * (this.searchResultsNotes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), this.searchResultsNotes().at(0)!)).reminders.length))) + 'rem'};
+            return {'height': (Math.ceil(this.filteredNotes().length) * (16 + (8 * (this.filteredNotes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), this.filteredNotes().at(0)!)).reminders.length))) + 'rem'};
         } catch (error) {
-            return {'height': (Math.ceil(this.searchResultsNotes().length) * 16) + 'rem'};
+            return {'height': (Math.ceil(this.filteredNotes().length) * 16) + 'rem'};
         }
-    });
+    })
 
-    protected readonly StateService = StateService;
-    protected readonly Monitor = Monitor;
+    protected readonly StateService = StateService
+    protected readonly Monitor = Monitor
 
     constructor(protected readonly stateService: StateService) {
         this.cols.update(_ => this.calculateCols())
-        this.search.valueChanges.pipe(debounceTime(600)).subscribe(value => this.updateResults(value));
+        this.search.valueChanges.pipe(debounceTime(600)).subscribe(value => {
+            this.updateSearchResults(value)
+            this.searchInput.update(_ => value!)
+        });
     }
 
     @HostListener('window:resize', ['$event'])
@@ -325,20 +366,20 @@ export class App {
         return Math.floor(window.innerWidth / 400)
     }
 
-    updateResults(input: string | null) {
+    updateSearchResults(input: string | null) {
         if (input != undefined) {
-            if (!input.startsWith('tag:')) {
-                this.searchTerm.update(_ => input);
+            if (!input.toLowerCase().startsWith('tag:')) {
+                this.searchContent.update(_ => input);
                 this.searchTag.update(_ => '')
             } else {
                 if (input.includes(';')) {
                     const tag = input.substring(input.indexOf(':') + 1, input.indexOf(';')).trim();
                     const other = input.substring(input.indexOf(';') + 1).trim();
-                    this.searchTerm.update(_ => other)
+                    this.searchContent.update(_ => other)
                     this.searchTag.update(_ => tag)
                 } else {
                     const tag = input.substring(input.indexOf(':') + 1).trim();
-                    this.searchTerm.update(_ => '')
+                    this.searchContent.update(_ => '')
                     this.searchTag.update(_ => tag)
                 }
             }

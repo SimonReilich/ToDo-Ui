@@ -8,7 +8,6 @@ export interface Reminder {
     id: number;
     title: string;
     date: string;
-    category: string;
     done: boolean;
     tag?: Tag;
 }
@@ -31,7 +30,6 @@ export class ReminderService {
         return this.http.post<Reminder>('/api/reminders', {
             title: reminder.title,
             date: reminder.date,
-            category: reminder.category,
             done: reminder.done,
             tag: reminder.tag
         }).pipe(delay(StateService.delay))

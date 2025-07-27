@@ -46,10 +46,12 @@ export class NoteEditComponent {
                 <textarea matInput type="text" id="desc" [formControl]="desc" required></textarea>
             </mat-form-field>
             <mat-form-field>
-                <mat-label>category</mat-label>
-                <mat-select [formControl]="category">
-                    <mat-option value="ToDo">ToDo</mat-option>
-                    <mat-option value="Important">Important</mat-option>
+                <mat-label>tag</mat-label>
+                <mat-select [formControl]="tag">
+                    <mat-option [value]="-1">no tag</mat-option>
+                    @for (tag of StateService.tags(); track tag.id) {
+                        <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
+                    }
                 </mat-select>
             </mat-form-field>
         </form>
@@ -73,7 +75,7 @@ export class EditNoteSheet {
 
     title = new FormControl('');
     desc = new FormControl('');
-    category = new FormControl('ToDo');
+    tag = new FormControl(-1);
 
     private _bottomSheetRef =
         inject<MatBottomSheetRef<EditNoteSheet>>(MatBottomSheetRef);
@@ -84,7 +86,7 @@ export class EditNoteSheet {
         if (note != undefined) {
             this.title = new FormControl(note.name)
             this.desc = new FormControl(note.description)
-            this.category = new FormControl(note.category)
+            this.tag = new FormControl(note.tag == undefined ? -1 : note.tag!.id)
         }
     }
 
@@ -93,9 +95,11 @@ export class EditNoteSheet {
             id: this.data.id,
             name: this.title.value!,
             description: this.desc.value!,
-            reminders: [],
-            category: this.category.value!,
+            reminders: this.stateService.getNoteById(this.data.id)!.reminders,
+            tag: this.stateService.getTagById(this.tag.value!),
         })
         this._bottomSheetRef.dismiss()
     }
+
+    protected readonly StateService = StateService;
 }

@@ -66,10 +66,12 @@ export class ReminderEditComponent {
             </mat-form-field>
 
             <mat-form-field>
-                <mat-label>category</mat-label>
-                <mat-select [formControl]="category">
-                    <mat-option value="ToDo">ToDo</mat-option>
-                    <mat-option value="Important">Important</mat-option>
+                <mat-label>tag</mat-label>
+                <mat-select [formControl]="tag">
+                    <mat-option [value]="-1">no tag</mat-option>
+                    @for (tag of StateService.tags(); track tag.id) {
+                        <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
+                    }
                 </mat-select>
             </mat-form-field>
             <mat-form-field>
@@ -109,7 +111,7 @@ export class ReminderEditComponent {
 export class EditReminderSheet {
 
     title = new FormControl('');
-    category = new FormControl('ToDo');
+    tag = new FormControl(-1);
     note = new FormControl('');
     value: Date = new Date();
 
@@ -125,7 +127,7 @@ export class EditReminderSheet {
 
         if (reminder != undefined) {
             this.title = new FormControl(reminder.title);
-            this.category = new FormControl(reminder.category);
+            this.tag = new FormControl(reminder.tag == undefined ? -1 : reminder.tag!.id)
             this.value = new Date(reminder.date);
             if (assignedNote != undefined) {
                 this.note = new FormControl(assignedNote.name)
@@ -137,9 +139,9 @@ export class EditReminderSheet {
         this.stateService.editReminder({
             id: this.data.id,
             title: this.title.value!,
-            category: this.category.value!,
             date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0'),
-            done: this.stateService.getReminderById(this.data.id)!.done
+            done: this.stateService.getReminderById(this.data.id)!.done,
+            tag: this.stateService.getTagById(this.tag.value!),
         })
 
         StateService.notes().filter(n => {

@@ -1,5 +1,5 @@
 import {Component, inject, signal} from '@angular/core';
-import {Form, FormControl, ReactiveFormsModule} from '@angular/forms';
+import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {MatButton, MatFabButton} from "@angular/material/button";
 import {MatFormField, MatInput} from "@angular/material/input";
 import {MatLabel} from "@angular/material/form-field";
@@ -88,7 +88,6 @@ export class CreateNoteSheet {
             name: this.title.value!.trim(),
             description: this.desc.value!.trim(),
             reminders: [],
-            category: 'ToDo',
             tag: this.stateService.getTagById(this.tag.value!),
         })
         this._bottomSheetRef.dismiss()

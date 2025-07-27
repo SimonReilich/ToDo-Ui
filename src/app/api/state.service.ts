@@ -163,7 +163,6 @@ export class StateService {
                 id: n.id,
                 name: n.name,
                 description: n.description,
-                category: n.category,
                 reminders: n.reminders.filter(r => r.id != id),
                 tag: n.tag
             }
@@ -189,7 +188,6 @@ export class StateService {
                 id: n.id,
                 name: n.name,
                 description: n.description,
-                category: n.category,
                 reminders: n.reminders,
                 tag: (n.tag != undefined && n.tag.id == id) ? undefined : n.tag
             }
@@ -199,7 +197,6 @@ export class StateService {
                 id: r.id,
                 title: r.title,
                 date: r.date,
-                category: r.category,
                 done: r.done,
                 tag: (r.tag != undefined && r.tag.id == id) ? undefined : r.tag
             }
@@ -253,7 +250,6 @@ export class StateService {
                 id: n.id,
                 name: n.name,
                 description: n.description,
-                category: n.category,
                 reminders: n.reminders.map(r => {
                     if (r.id == reminder.id) {
                         return reminder
@@ -291,7 +287,6 @@ export class StateService {
                 id: n.id,
                 name: n.name,
                 description: n.description,
-                category: n.category,
                 reminders: n.reminders,
                 tag: (n.tag != undefined && n.tag.id == tag.id) ? tag : n.tag
             }
@@ -301,7 +296,6 @@ export class StateService {
                 id: r.id,
                 title: r.title,
                 date: r.date,
-                category: r.category,
                 done: r.done,
                 tag: (r.tag != undefined && r.tag.id == tag.id) ? tag : r.tag
             }
@@ -326,7 +320,6 @@ export class StateService {
                 return {
                     id: r.id,
                     title: r.title,
-                    category: r.category,
                     date: r.date,
                     done: true,
                     tag: r.tag
@@ -341,13 +334,11 @@ export class StateService {
                     id: n.id,
                     name: n.name,
                     description: n.description,
-                    category: n.category,
                     reminders: n.reminders.map(r => {
                         if (r.id == id) {
                             return {
                                 id: r.id,
                                 title: r.title,
-                                category: r.category,
                                 date: r.date,
                                 done: true,
                                 tag: r.tag
@@ -383,7 +374,6 @@ export class StateService {
                     id: n.id,
                     name: n.name,
                     description: n.description,
-                    category: n.category,
                     reminders: [...n.reminders, reminder!],
                     tag: n.tag
                 }
@@ -412,7 +402,6 @@ export class StateService {
                     id: n.id,
                     name: n.name,
                     description: n.description,
-                    category: n.category,
                     reminders: n.reminders.filter(r => r.id != rId),
                     tag: n.tag
                 }
@@ -440,7 +429,6 @@ export class StateService {
                 id: n.id,
                 name: n.name,
                 description: n.description,
-                category: n.category,
                 reminders: n.reminders,
                 tag: (n.tag != undefined && n.tag.id == id2) ? this.getTagById(id1) : n.tag
             }
@@ -450,7 +438,6 @@ export class StateService {
                 id: r.id,
                 title: r.title,
                 date: r.date,
-                category: r.category,
                 done: r.done,
                 tag: (r.tag != undefined && r.tag.id == id2) ? this.getTagById(id1) : r.tag
             }
