@@ -64,7 +64,7 @@ export class ReminderGridComponent {
 
     protected readonly cols = signal(1)
     protected readonly height = computed(() => {
-        return {'height': (Math.ceil(this.stateService.reminders().length / this.cols()) * 11) + 'rem'};
+        return {'height': (Math.ceil(this.reminders()().length / this.cols()) * 11) + 'rem'};
     })
 
     protected readonly Monitor = Monitor

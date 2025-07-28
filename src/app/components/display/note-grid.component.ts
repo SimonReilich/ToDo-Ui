@@ -93,9 +93,9 @@ export class NoteGridComponent {
     protected readonly cols = signal(1)
     protected readonly height = computed(() => {
         try {
-            return {'height': (Math.ceil(this.stateService.notes().length / this.cols()) * (16 + (8 * (this.stateService.notes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), this.stateService.notes().at(0)!)).reminders.length))) + 'rem'};
+            return {'height': (Math.ceil(this.notes()().length / this.cols()) * (16 + (8 * (this.notes()().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), this.notes()().at(0)!)).reminders.length))) + 'rem'};
         } catch (error) {
-            return {'height': (Math.ceil(this.stateService.notes().length / this.cols()) * 16) + 'rem'};
+            return {'height': (Math.ceil(this.notes()().length / this.cols()) * 16) + 'rem'};
         }
     })
 
