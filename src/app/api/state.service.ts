@@ -26,7 +26,7 @@ export class StateService {
 
     public static readonly working: WritableSignal<boolean> = signal(false)
 
-    public static readonly delay: number = 2_000
+    public static readonly delay: number = 0
 
     constructor(protected noteService: NoteService, protected reminderService: ReminderService, protected tagService: TagService) {
         this.updateTags().then(() => this.refresh())

@@ -91,6 +91,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
                                             <div class="buttons">
+                                                <reminder-edit [id]="reminder.id" buttonStyle="text"></reminder-edit>
                                                 <button (click)="stateService.removeReminder(note.id, reminder.id)"
                                                         matButton [disabled]="Monitor.waitingOnExcl()">remove
                                                 </button>
@@ -136,7 +137,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                 </div>
                                 <mat-divider></mat-divider>
                                 <div class="buttons buttonsRem">
-                                    <reminder-edit [id]="reminder.id"></reminder-edit>
+                                    <reminder-edit [id]="reminder.id" buttonStyle="outlined"></reminder-edit>
                                     <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined"
                                             [disabled]="Monitor.waitingOnExcl()">delete
                                     </button>
@@ -186,7 +187,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                             class="bold"> {{ searchContent() }} </span></p>
                 } @else if (filteredNotes().length == 0 && filteredReminders().length == 0) {
                     <p class="warning">No notes or reminders with tag <span
-                            class="bold"> {{ searchTag() }} </span> found</p>
+                            class="bold"> {{ searchTag() }} </span></p>
                 }
 
                 <mat-grid-list [cols]="1" rowHeight="fit" [ngStyle]="noteSearchHeight()" class="searchRes">
@@ -213,6 +214,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
                                             <div class="buttons">
+                                                <reminder-edit [id]="reminder.id" buttonStyle="text"></reminder-edit>
                                                 <button (click)="stateService.removeReminder(note.id, reminder.id)"
                                                         matButton [disabled]="Monitor.waitingOnExcl()">remove
                                                 </button>
@@ -253,7 +255,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                 </div>
                                 <mat-divider></mat-divider>
                                 <div class="buttons buttonsRem">
-                                    <reminder-edit [id]="reminder.id"></reminder-edit>
+                                    <reminder-edit [id]="reminder.id" buttonStyle="outlined"></reminder-edit>
                                     <button (click)="stateService.deleteReminder(reminder.id)" matButton="outlined"
                                             [disabled]="Monitor.waitingOnExcl()">delete
                                     </button>

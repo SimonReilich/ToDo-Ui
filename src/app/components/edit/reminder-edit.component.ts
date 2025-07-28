@@ -20,7 +20,7 @@ import {Monitor, StateService} from "../../api/state.service";
         FormsModule,
     ],
     template: `
-        <button (click)="openBottomSheet()" matButton="outlined" [disabled]="Monitor.waitingOnExcl()">edit</button>
+        <button (click)="openBottomSheet()" [matButton]="buttonStyle()" [disabled]="Monitor.waitingOnExcl()">edit</button>
     `,
     styles: `
     `
@@ -30,6 +30,7 @@ export class ReminderEditComponent {
     private _bottomSheet = inject(MatBottomSheet);
 
     id = input.required<number>()
+    buttonStyle = input.required<"outlined" | "text">()
 
     protected readonly Monitor = Monitor;
 
