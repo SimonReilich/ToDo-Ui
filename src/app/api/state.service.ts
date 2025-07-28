@@ -390,7 +390,7 @@ export class StateService {
         })
     }
 
-    async createAndAssignReminder(id: number, reminder: Reminder) {
+    async addAndAssignReminder(id: number, reminder: Reminder) {
         const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
         this.working.update(_ => true)

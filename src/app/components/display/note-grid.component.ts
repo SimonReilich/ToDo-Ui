@@ -10,6 +10,7 @@ import {Monitor, StateService} from "../../api/state.service";
 import {NgStyle} from "@angular/common";
 import {Note} from "../../api/note.service";
 import {MatDivider} from "@angular/material/list";
+import {toObservable} from "@angular/core/rxjs-interop";
 
 @Component({
     selector: 'note-grid',
@@ -100,7 +101,9 @@ export class NoteGridComponent {
 
     protected readonly Monitor = Monitor
 
-    constructor(protected readonly stateService: StateService) {}
+    constructor(protected readonly stateService: StateService) {
+        toObservable(this.colsConfig).subscribe(_ => this.sizeChange(0))
+    }
 
     @HostListener('window:resize', ['$event'])
     sizeChange(_: any) {

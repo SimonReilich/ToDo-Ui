@@ -9,6 +9,7 @@ import {Monitor, StateService} from "../../api/state.service";
 import {NgStyle} from "@angular/common";
 import {MatDivider} from "@angular/material/list";
 import {Reminder} from "../../api/reminder.service";
+import {toObservable} from "@angular/core/rxjs-interop";
 
 @Component({
     selector: 'reminder-grid',
@@ -69,6 +70,7 @@ export class ReminderGridComponent {
     protected readonly Monitor = Monitor
 
     constructor(protected readonly stateService: StateService) {
+        toObservable(this.colsConfig).subscribe(_ => this.sizeChange(0))
     }
 
     @HostListener('window:resize', ['$event'])
