@@ -6,7 +6,6 @@ import {MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle} fr
 import {MatButton} from "@angular/material/button";
 import {MatGridList, MatGridTile} from "@angular/material/grid-list";
 import {MatDivider} from "@angular/material/list";
-import {MatChip} from "@angular/material/chips";
 import {MatCheckbox} from "@angular/material/checkbox";
 import {NgStyle} from "@angular/common";
 import {NoteEditComponent} from "./components/edit/note-edit.component";
@@ -37,7 +36,6 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
         MatCardTitle,
         MatGridList,
         MatGridTile,
-        MatChip,
         MatDivider,
         MatCheckbox,
         NgStyle,
@@ -76,7 +74,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                 <mat-card-header>
                                     <mat-card-title>{{ note.name }}</mat-card-title>
                                     @if (note.tag != undefined) {
-                                        <mat-chip>{{ note.tag.name }}</mat-chip>
+                                        <tag-edit [tag]="note.tag"></tag-edit>
                                     }
                                 </mat-card-header>
                                 <mat-divider></mat-divider>
@@ -88,7 +86,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                             <div class="header">
                                                 <span>{{ reminder.title }}</span>
                                                 @if (reminder.tag != undefined) {
-                                                    <mat-chip>{{ reminder.tag.name }}</mat-chip>
+                                                    <tag-edit [tag]="reminder.tag"></tag-edit>
                                                 }
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
@@ -132,7 +130,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                 <div class="header">
                                     <span class="title">{{ reminder.title }}</span>
                                     @if (reminder.tag != undefined) {
-                                        <mat-chip>{{ reminder.tag.name }}</mat-chip>
+                                        <tag-edit [tag]="reminder.tag"></tag-edit>
                                     }
                                     <span class="date">{{ reminder.date }}</span>
                                 </div>
@@ -198,7 +196,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                 <mat-card-header>
                                     <mat-card-title>{{ note.name }}</mat-card-title>
                                     @if (note.tag != undefined) {
-                                        <mat-chip>{{ note.tag.name }}</mat-chip>
+                                        <tag-edit [tag]="note.tag"></tag-edit>
                                     }
                                 </mat-card-header>
                                 <mat-divider></mat-divider>
@@ -210,7 +208,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                             <div class="header">
                                                 <span>{{ reminder.title }}</span>
                                                 @if (reminder.tag != undefined) {
-                                                    <mat-chip>{{ reminder.tag.name }}</mat-chip>
+                                                    <tag-edit [tag]="reminder.tag"></tag-edit>
                                                 }
                                                 <span class="date">{{ reminder.date }}</span>
                                             </div>
@@ -249,7 +247,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                                 <div class="header">
                                     <span class="title">{{ reminder.title }}</span>
                                     @if (reminder.tag != undefined) {
-                                        <mat-chip>{{ reminder.tag.name }}</mat-chip>
+                                        <tag-edit [tag]="reminder.tag"></tag-edit>
                                     }
                                     <span class="date">{{ reminder.date }}</span>
                                 </div>
