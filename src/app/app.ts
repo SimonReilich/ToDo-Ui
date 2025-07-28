@@ -291,6 +291,24 @@ export class App {
             return {'height': (Math.ceil(StateService.notes().length / this.cols()) * 16) + 'rem'};
         }
     })
+    protected readonly reminderSearchHeight = computed(() => {
+        return {'height': (Math.ceil(this.filteredReminders().length) * 11) + 'rem'};
+    })
+    protected readonly noteSearchHeight = computed(() => {
+        if (this.filteredNotes().length != 0) {
+            try {
+                return {'height': (Math.ceil(this.filteredNotes().length) * (16 + (8 * (this.filteredNotes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), this.filteredNotes().at(0)!)).reminders.length))) + 'rem'};
+            } catch (error) {
+                return {'height': (Math.ceil(this.filteredNotes().length) * 16) + 'rem'};
+            }
+        } else {
+            return {
+                'height': 0,
+                'padding': 0,
+                'margin': 0
+            }
+        }
+    })
 
     protected readonly searchInput = signal('');
     protected readonly searchContent = signal('')
@@ -331,16 +349,6 @@ export class App {
             return StateService.tags().filter(t => t.name.toLowerCase().startsWith(this.searchTag().toLowerCase()));
         } else {
             return []
-        }
-    })
-    protected readonly reminderSearchHeight = computed(() => {
-        return {'height': (Math.ceil(this.filteredReminders().length) * 11) + 'rem'};
-    })
-    protected readonly noteSearchHeight = computed(() => {
-        try {
-            return {'height': (Math.ceil(this.filteredNotes().length) * (16 + (8 * (this.filteredNotes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), this.filteredNotes().at(0)!)).reminders.length))) + 'rem'};
-        } catch (error) {
-            return {'height': (Math.ceil(this.filteredNotes().length) * 16) + 'rem'};
         }
     })
 
