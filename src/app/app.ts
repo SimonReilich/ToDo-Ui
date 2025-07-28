@@ -21,6 +21,8 @@ import {MatLabel} from "@angular/material/form-field";
 import {FormControl, ReactiveFormsModule} from "@angular/forms";
 import {debounceTime} from "rxjs";
 import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/material/autocomplete";
+import {Note} from "./api/note.service";
+import {Reminder} from "./api/reminder.service";
 
 @Component({
     selector: 'td-root',
@@ -346,9 +348,9 @@ export class App {
         } else if (this.searchInput().length > 4 && !this.searchInput().toLowerCase().startsWith('tag:')) {
             return [];
         } else if (this.searchInput().length <= 4 && 'tag:'.startsWith(this.searchInput().toLowerCase().trim())) {
-            return StateService.tags();
+            return StateService.tags().filter(t => StateService.notes().some((n: Note) => n.tag?.id == t.id) || StateService.reminders().some((r: Reminder) => r.tag?.id == t.id));
         } else if (this.searchInput().toLowerCase().startsWith('tag:')) {
-            return StateService.tags().filter(t => t.name.toLowerCase().startsWith(this.searchTag().toLowerCase()));
+            return StateService.tags().filter(t => t.name.toLowerCase().startsWith(this.searchTag().toLowerCase())).filter(t => StateService.notes().some((n: Note) => n.tag?.id == t.id) || StateService.reminders().some((r: Reminder) => r.tag?.id == t.id));
         } else {
             return []
         }
