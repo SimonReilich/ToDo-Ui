@@ -1,5 +1,5 @@
 import {Component, inject} from '@angular/core';
-import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {FormBuilder, FormControl, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatFormField, MatInput, MatLabel} from "@angular/material/input";
 import {MatOption, MatSelect} from "@angular/material/select";
 import {MatButton, MatFabButton} from "@angular/material/button";
@@ -41,10 +41,10 @@ export class ReminderCreationComponent {
 @Component({
     selector: 'create-reminder-sheet',
     template: `
-        <form class="sheetForm">
+        <form class="sheetForm" [formGroup]="form">
             <mat-form-field>
                 <mat-label>title</mat-label>
-                <input matInput type="text" id="title" [formControl]="title" required>
+                <input matInput type="text" id="title" formControlName="title" required>
             </mat-form-field>
 
             <mat-form-field>
@@ -67,7 +67,7 @@ export class ReminderCreationComponent {
 
             <mat-form-field>
                 <mat-label>tag</mat-label>
-                <mat-select [formControl]="tag">
+                <mat-select formControlName="tag">
                     <mat-option [value]="-1">no tag</mat-option>
                     @for (tag of stateService.tags(); track tag.id) {
                         <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
@@ -100,23 +100,26 @@ export class ReminderCreationComponent {
 })
 
 export class CreateReminderSheet {
-
-    title = new FormControl('');
-    tag = new FormControl(-1);
+    readonly form
     value: Date = new Date();
 
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateReminderSheet>>(MatBottomSheetRef);
 
-    constructor(protected stateService: StateService) {}
+    constructor(protected stateService: StateService, protected readonly fb: FormBuilder) {
+        this.form = fb.group({
+            title: this.fb.control('', [Validators.required]),
+            tag: this.fb.control(-1, [Validators.required]),
+        })
+    }
 
     add() {
         this.stateService.addReminder({
             id: -1,
-            title: this.title.value!.trim(),
+            title: this.form.value.title!.trim(),
             date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0'),
             done: false,
-            tag: this.stateService.getTagById(this.tag.value!),
+            tag: this.stateService.getTagById(this.form.value.tag!),
         })
         this._bottomSheetRef.dismiss()
     }
