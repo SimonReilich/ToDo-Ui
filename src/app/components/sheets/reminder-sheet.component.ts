@@ -51,7 +51,7 @@ import {Note} from "../../api/note.service";
             <mat-form-field>
                 <mat-label>note</mat-label>
                 <mat-select formControlName="note">
-                    <mat-option value="">none</mat-option>
+                    <mat-option [value]="-1">none</mat-option>
                     @for (note of stateService.notes(); track note.id) {
                         <mat-option [value]="note.id">{{ note.name }}</mat-option>
                     }
@@ -96,8 +96,8 @@ export class ReminderSheet {
         if (this.data == null) {
             this.form = fb.group({
                 title: this.fb.control('', [Validators.required]),
-                tag: this.fb.control(-1, [Validators.required]),
-                note: this.fb.control(-1, [Validators.required]),
+                tag: this.fb.control(-1),
+                note: this.fb.control(-1),
             })
             this.mode = 'create'
         } else {

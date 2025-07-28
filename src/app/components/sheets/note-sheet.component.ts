@@ -15,11 +15,11 @@ import {StateService} from "../../api/state.service";
         <form class="sheetForm" [formGroup]="form">
             <mat-form-field>
                 <mat-label>title</mat-label>
-                <input matInput type="text" id="title" formControlName="title" required>
+                <input matInput type="text" id="title" formControlName="title">
             </mat-form-field>
             <mat-form-field>
                 <mat-label>description</mat-label>
-                <textarea matInput type="text" id="desc" formControlName="description" required></textarea>
+                <textarea matInput type="text" id="desc" formControlName="description"></textarea>
             </mat-form-field>
             <mat-form-field>
                 <mat-label>tag</mat-label>
@@ -59,7 +59,7 @@ export class NoteSheet {
             this.form = fb.group({
                 title: this.fb.control('', [Validators.required]),
                 description: this.fb.control(''),
-                tag: this.fb.control(-1, [Validators.required]),
+                tag: this.fb.control(-1),
             })
             this.mode = 'create'
         } else {
