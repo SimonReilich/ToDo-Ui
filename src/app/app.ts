@@ -175,7 +175,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                 </mat-form-field>
                 <mat-autocomplete #auto="matAutocomplete">
                     @for (tag of filteredTags(); track tag.id) {
-                        <mat-option [value]="'tag: ' + tag.name">tag: {{ tag.name }}</mat-option>
+                        <mat-option [value]="'tag: ' + tag.name + '; '">tag: {{ tag.name }}</mat-option>
                     }
                 </mat-autocomplete>
 
