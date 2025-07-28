@@ -17,7 +17,7 @@ import {StateService} from "../../api/state.service";
                 <mat-label>title</mat-label>
                 <input matInput type="text" id="title" [formControl]="name" required>
             </mat-form-field>
-            @if (mode == 'edit') {
+            @if (mode == 'modify') {
                 <mat-form-field>
                     <mat-label>merge</mat-label>
                     <mat-select [formControl]="merge">
@@ -30,8 +30,8 @@ import {StateService} from "../../api/state.service";
             }
         </form>
         <div class="formButtonContainer">
-            <button (click)="mode == 'create' ? add() : edit()" matButton="outlined" class="formButton">confirm</button>
-            @if (mode == 'edit') {
+            <button (click)="mode == 'create' ? add() : edit()" matButton="outlined" class="formButton">{{ mode }}</button>
+            @if (mode == 'modify') {
                 <button (click)="delete()" matButton="outlined" class="formButton">delete tag</button>
             }
         </div>
@@ -59,11 +59,11 @@ export class TagSheet {
         inject<MatBottomSheetRef<TagSheet>>(MatBottomSheetRef);
 
     constructor(private stateService: StateService, @Inject(MAT_BOTTOM_SHEET_DATA) public data: { id?: number }) {
-        if (this.data == null || this.data.id == undefined) {
+        if (this.data == null) {
             this.other = []
             this.mode = 'create'
         } else {
-            const tag = stateService.getTagById(this.data.id)
+            const tag = stateService.getTagById(this.data.id!)
             if (tag != undefined) {
                 this.name = new FormControl(tag.name)
             }

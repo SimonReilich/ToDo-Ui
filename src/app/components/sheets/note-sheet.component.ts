@@ -32,7 +32,7 @@ import {StateService} from "../../api/state.service";
             </mat-form-field>
         </form>
         <div class="formButtonContainer">
-            <button (click)="mode == 'create' ? add() : edit()" matButton="outlined" class="formButton">create</button>
+            <button (click)="mode == 'create' ? add() : edit()" matButton="outlined" class="formButton">{{ mode }}</button>
         </div>`,
     imports: [
         MatListModule,
@@ -54,10 +54,8 @@ export class NoteSheet {
 
     protected readonly mode: 'create' | 'modify'
 
-    constructor(protected stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {id?: number}) {
-        const note = stateService.getNoteById(this.data.id!)
-
-        if (note == undefined) {
+    constructor(protected stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data?: {id?: number}) {
+        if (this.data == null) {
             this.form = fb.group({
                 title: this.fb.control('', [Validators.required]),
                 description: this.fb.control(''),
@@ -65,6 +63,7 @@ export class NoteSheet {
             })
             this.mode = 'create'
         } else {
+            const note = stateService.getNoteById(this.data.id!)!
             this.form = fb.group({
                 title: this.fb.control(note.name, [Validators.required]),
                 description: this.fb.control(note.description),
@@ -87,10 +86,10 @@ export class NoteSheet {
 
     edit() {
         this.stateService.editNote({
-            id: this.data.id!,
+            id: this.data!.id!,
             name: this.form.value.title!.trim(),
             description: this.form.value.description!,
-            reminders: this.stateService.getNoteById(this.data.id!)!.reminders,
+            reminders: this.stateService.getNoteById(this.data!.id!)!.reminders,
             tag: this.stateService.getTagById(this.form.value.tag!),
         })
         this._bottomSheetRef.dismiss()

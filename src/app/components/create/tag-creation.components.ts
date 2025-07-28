@@ -3,7 +3,7 @@ import {ReactiveFormsModule} from '@angular/forms';
 import {MatFabButton} from "@angular/material/button";
 import {MatBottomSheet} from "@angular/material/bottom-sheet";
 import {MatIconModule} from "@angular/material/icon";
-import {Monitor, StateService} from "../../api/state.service";
+import {Monitor} from "../../api/state.service";
 import {TagSheet} from "../sheets/tag-sheet.component";
 
 @Component({
@@ -23,7 +23,6 @@ import {TagSheet} from "../sheets/tag-sheet.component";
 })
 export class TagCreationComponent {
 
-    protected readonly StateService = StateService;
     protected readonly Monitor = Monitor;
     private _bottomSheet = inject(MatBottomSheet);
 

@@ -59,7 +59,7 @@ import {Note} from "../../api/note.service";
             </mat-form-field>
         </form>
         <div class="formButtonContainer">
-            <button (click)="mode == 'create' ? add() : edit()" matButton="outlined" class="formButton">confirm</button>
+            <button (click)="mode == 'create' ? add() : edit()" matButton="outlined" class="formButton">{{ mode }}</button>
         </div>
     `,
     providers: [provideNativeDateAdapter()],
@@ -89,7 +89,7 @@ export class ReminderSheet {
     private _bottomSheetRef =
         inject<MatBottomSheetRef<ReminderSheet>>(MatBottomSheetRef);
 
-    constructor(protected stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {
+    constructor(protected stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data?: {
         id?: number
     }) {
 
@@ -126,21 +126,21 @@ export class ReminderSheet {
 
     edit() {
         this.stateService.editReminder({
-            id: this.data.id!,
+            id: this.data!.id!,
             title: this.form.value.title!,
             date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0'),
-            done: this.stateService.getReminderById(this.data.id!)!.done,
+            done: this.stateService.getReminderById(this.data!.id!)!.done,
             tag: this.stateService.getTagById(this.form.value.tag!),
         })
 
         this.stateService.notes().filter(n => {
-            return n.reminders.some(r => r.id == this.data.id) || n.id == this.form.value.note
+            return n.reminders.some(r => r.id == this.data!.id) || n.id == this.form.value.note
         }).forEach((note: Note) => {
             if (this.stateService.getNoteById(this.form.value.note!) != undefined && note.name == this.stateService.getNoteById(this.form.value.note!)!.name) {
-                if (note.reminders.some(r => r.id == this.data.id)) return;
-                this.stateService.assignReminder(note.id, this.data.id!)
+                if (note.reminders.some(r => r.id == this.data!.id)) return;
+                this.stateService.assignReminder(note.id, this.data!.id!)
             } else {
-                this.stateService.removeReminder(note.id, this.data.id!)
+                this.stateService.removeReminder(note.id, this.data!.id!)
             }
         })
         this._bottomSheetRef.dismiss()
