@@ -70,7 +70,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                 <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="noteHeight()">
                     @for (note of StateService.notes(); track note.id) {
                         <mat-grid-tile>
-                            <mat-card appearance="outlined" class="card">
+                            <mat-card appearance="raised" class="card">
                                 <mat-card-header>
                                     <mat-card-title>{{ note.name }}</mat-card-title>
                                     @if (note.tag != undefined) {
@@ -126,7 +126,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                 <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="reminderHeight()">
                     @for (reminder of StateService.reminders(); track reminder.id) {
                         <mat-grid-tile>
-                            <mat-card class="reminderItem card" appearance="outlined">
+                            <mat-card class="reminderItem card" appearance="raised">
                                 <div class="header">
                                     <span class="title">{{ reminder.title }}</span>
                                     @if (reminder.tag != undefined) {
@@ -192,7 +192,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                 <mat-grid-list [cols]="1" rowHeight="fit" [ngStyle]="noteSearchHeight()" class="searchRes">
                     @for (note of filteredNotes(); track note.id) {
                         <mat-grid-tile>
-                            <mat-card appearance="outlined" class="card">
+                            <mat-card appearance="raised" class="card">
                                 <mat-card-header>
                                     <mat-card-title>{{ note.name }}</mat-card-title>
                                     @if (note.tag != undefined) {
@@ -243,7 +243,7 @@ import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/mater
                 <mat-grid-list [cols]="1" rowHeight="fit" [ngStyle]="reminderSearchHeight()" class="searchRes">
                     @for (reminder of filteredReminders(); track reminder.id) {
                         <mat-grid-tile>
-                            <mat-card class="reminderItem card" appearance="outlined">
+                            <mat-card class="reminderItem card" appearance="raised">
                                 <div class="header">
                                     <span class="title">{{ reminder.title }}</span>
                                     @if (reminder.tag != undefined) {
