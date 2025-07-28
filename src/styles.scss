@@ -213,5 +213,36 @@ mat-spinner {
   }
 }
 
-html, body { padding-inline: 0;}
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+mat-tab {
+  overflow-x: hidden;
+}
+
+.tableWrapper {
+  width: calc(100vw - 2rem);
+  max-width: calc(800px + 1rem);
+  margin-block: 1rem;
+  margin-inline: calc(50vw - min(50vw - 1rem, 400px + 0.5rem));
+}
+
+mat-table {
+  mat-chip {
+    margin-block: 1rem;
+  }
+  width: auto;
+
+  ng-container, mat-header-cell, mat-cell, mat-header-row, mat-row {
+    width: auto;
+    overflow-x: hidden;
+  }
+}
+
+html, body {
+  padding-inline: 0;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto,
+  "Helvetica Neue", sans-serif;
+  overflow-x: hidden;
+}

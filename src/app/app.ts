@@ -23,6 +23,24 @@ import {debounceTime} from "rxjs";
 import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/material/autocomplete";
 import {Note} from "./api/note.service";
 import {Reminder} from "./api/reminder.service";
+import {
+    MatCell,
+    MatCellDef,
+    MatColumnDef,
+    MatHeaderCell,
+    MatHeaderCellDef,
+    MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef,
+    MatTable, MatTableDataSource
+} from "@angular/material/table";
+import {MatSort, MatSortHeader} from "@angular/material/sort";
+import {toObservable} from "@angular/core/rxjs-interop";
+
+export interface tagListEntry {
+    name: string;
+    id: number;
+    notes: number;
+    reminders: number;
+}
 
 @Component({
     selector: 'td-root',
@@ -57,6 +75,19 @@ import {Reminder} from "./api/reminder.service";
         MatAutocomplete,
         MatOption,
         MatAutocompleteTrigger,
+        MatTable,
+        MatSort,
+        MatColumnDef,
+        MatHeaderCell,
+        MatSortHeader,
+        MatCell,
+        MatCellDef,
+        MatHeaderCellDef,
+        MatSort,
+        MatHeaderRow,
+        MatRow,
+        MatHeaderRowDef,
+        MatRowDef,
     ],
     template: `
         <mat-toolbar>
@@ -160,12 +191,41 @@ import {Reminder} from "./api/reminder.service";
             </mat-tab>
 
             <mat-tab label="Tags">
-                <div class="tagContainer">
-                    @for (tag of StateService.tags(); track tag.id) {
-                        <tag-edit class="tag" [tag]="tag">{{ tag.name }}</tag-edit>
-                    }
-                </div>
+                <div class="tableWrapper">
+                    <mat-table [dataSource]="dataSource" matSort
+                               class="mat-elevation-z8">
 
+                        <!-- Name Column -->
+                        <ng-container matColumnDef="name">
+                            <mat-header-cell *matHeaderCellDef mat-sort-header="name" sortActionDescription="Sort by name">
+                                Name
+                            </mat-header-cell>
+                            <mat-cell *matCellDef="let tag">
+                                <tag-edit class="tag" [tag]="tag">{{ tag.name }}</tag-edit>
+                            </mat-cell>
+                        </ng-container>
+
+                        <!-- Notes Column -->
+                        <ng-container matColumnDef="notes">
+                            <mat-header-cell *matHeaderCellDef mat-sort-header="notes" sortActionDescription="Sort by notes">
+                                Notes
+                            </mat-header-cell>
+                            <mat-cell *matCellDef="let tag"> {{tag.notes}} </mat-cell>
+                        </ng-container>
+
+                        <!-- Symbol Column -->
+                        <ng-container matColumnDef="reminders">
+                            <mat-header-cell *matHeaderCellDef mat-sort-header="reminders" sortActionDescription="Sort by reminder">
+                                Reminders
+                            </mat-header-cell>
+                            <mat-cell *matCellDef="let tag"> {{tag.reminders}} </mat-cell>
+                        </ng-container>
+
+                        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+                        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+                    </mat-table>
+                </div>
+                
                 <tag-creation></tag-creation>
             </mat-tab>
 
@@ -359,12 +419,47 @@ export class App {
     protected readonly StateService = StateService
     protected readonly Monitor = Monitor
 
+    displayedColumns = ['name', 'notes', 'reminders']
+    dataSource: MatTableDataSource<tagListEntry> = new MatTableDataSource(StateService.tags().map(t => {
+        return {
+            name: t.name,
+            id: t.id,
+            notes: StateService.notes().filter(n => n.tag?.id == t.id).length,
+            reminders: StateService.reminders().filter(r => r.tag?.id == t.id).length,
+        }
+    }))
+
     constructor(protected readonly stateService: StateService) {
         this.cols.update(_ => this.calculateCols())
         this.search.valueChanges.pipe(debounceTime(600)).subscribe(value => {
             this.updateSearchResults(value)
             this.searchInput.update(_ => value!)
         });
+
+        toObservable(StateService.notes).subscribe(value => {this.dataSource.data = StateService.tags().map(t => {
+            return {
+                name: t.name,
+                id: t.id,
+                notes: value.filter(n => n.tag?.id == t.id).length,
+                reminders: StateService.reminders().filter(r => r.tag?.id == t.id).length,
+            }
+        })})
+        toObservable(StateService.reminders).subscribe(value => {this.dataSource.data = StateService.tags().map(t => {
+            return {
+                name: t.name,
+                id: t.id,
+                notes: StateService.notes().filter(n => n.tag?.id == t.id).length,
+                reminders: value.filter(r => r.tag?.id == t.id).length,
+            }
+        })})
+        toObservable(StateService.tags).subscribe(value => {this.dataSource.data = value.map(t => {
+            return {
+                name: t.name,
+                id: t.id,
+                notes: StateService.notes().filter(n => n.tag?.id == t.id).length,
+                reminders: StateService.reminders().filter(r => r.tag?.id == t.id).length,
+            }
+        })})
     }
 
     @HostListener('window:resize', ['$event'])
