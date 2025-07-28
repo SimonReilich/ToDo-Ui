@@ -19,7 +19,7 @@ import {TagEditComponent} from "./components/edit/tag-edit.components";
 import {MatFormField, MatInput} from "@angular/material/input";
 import {MatLabel} from "@angular/material/form-field";
 import {FormControl, ReactiveFormsModule} from "@angular/forms";
-import {debounceTime} from "rxjs";
+import {debounceTime, map, merge, Observable} from "rxjs";
 import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/material/autocomplete";
 import {Note} from "./api/note.service";
 import {Reminder} from "./api/reminder.service";
@@ -29,17 +29,31 @@ import {
     MatColumnDef,
     MatHeaderCell,
     MatHeaderCellDef,
-    MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef,
-    MatTable, MatTableDataSource
+    MatHeaderRow,
+    MatHeaderRowDef,
+    MatRow,
+    MatRowDef,
+    MatTable,
 } from "@angular/material/table";
 import {MatSort, MatSortHeader} from "@angular/material/sort";
 import {toObservable} from "@angular/core/rxjs-interop";
+import {CollectionViewer, DataSource} from "@angular/cdk/collections";
 
 export interface tagListEntry {
     name: string;
     id: number;
     notes: number;
     reminders: number;
+}
+
+class TagStatistics implements DataSource<any>{
+    constructor(private readonly data$: Observable<any>) {}
+
+    connect(_: CollectionViewer): Observable<any[]> {
+        return this.data$;
+    }
+
+    disconnect(_: CollectionViewer): void {}
 }
 
 @Component({
@@ -92,7 +106,7 @@ export interface tagListEntry {
     template: `
         <mat-toolbar>
             <span>Welcome to your notes</span>
-            @if (StateService.working()) {
+            @if (stateService.working()) {
                 <span class="spacer"></span>
                 <mat-spinner diameter="23"></mat-spinner>
             }
@@ -101,7 +115,7 @@ export interface tagListEntry {
         <mat-tab-group>
             <mat-tab label="Notes">
                 <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="noteHeight()">
-                    @for (note of StateService.notes(); track note.id) {
+                    @for (note of stateService.notes(); track note.id) {
                         <mat-grid-tile>
                             <mat-card appearance="raised" class="card">
                                 <mat-card-header>
@@ -158,7 +172,7 @@ export interface tagListEntry {
             <mat-tab label="Reminders">
 
                 <mat-grid-list [cols]="cols()" rowHeight="fit" [ngStyle]="reminderHeight()">
-                    @for (reminder of StateService.reminders(); track reminder.id) {
+                    @for (reminder of stateService.reminders(); track reminder.id) {
                         <mat-grid-tile>
                             <mat-card class="reminderItem card" appearance="raised">
                                 <div class="header">
@@ -192,12 +206,13 @@ export interface tagListEntry {
 
             <mat-tab label="Tags">
                 <div class="tableWrapper">
-                    <mat-table [dataSource]="dataSource" matSort
+                    <mat-table [dataSource]="tagDataSource" matSort
                                class="mat-elevation-z8">
 
                         <!-- Name Column -->
                         <ng-container matColumnDef="name">
-                            <mat-header-cell *matHeaderCellDef mat-sort-header="name" sortActionDescription="Sort by name">
+                            <mat-header-cell *matHeaderCellDef mat-sort-header="name"
+                                             sortActionDescription="Sort by name">
                                 Name
                             </mat-header-cell>
                             <mat-cell *matCellDef="let tag">
@@ -207,25 +222,27 @@ export interface tagListEntry {
 
                         <!-- Notes Column -->
                         <ng-container matColumnDef="notes">
-                            <mat-header-cell *matHeaderCellDef mat-sort-header="notes" sortActionDescription="Sort by notes">
+                            <mat-header-cell *matHeaderCellDef mat-sort-header="notes"
+                                             sortActionDescription="Sort by notes">
                                 Notes
                             </mat-header-cell>
-                            <mat-cell *matCellDef="let tag"> {{tag.notes}} </mat-cell>
+                            <mat-cell *matCellDef="let tag"> {{ tag.notes }}</mat-cell>
                         </ng-container>
 
                         <!-- Symbol Column -->
                         <ng-container matColumnDef="reminders">
-                            <mat-header-cell *matHeaderCellDef mat-sort-header="reminders" sortActionDescription="Sort by reminder">
+                            <mat-header-cell *matHeaderCellDef mat-sort-header="reminders"
+                                             sortActionDescription="Sort by reminder">
                                 Reminders
                             </mat-header-cell>
-                            <mat-cell *matCellDef="let tag"> {{tag.reminders}} </mat-cell>
+                            <mat-cell *matCellDef="let tag"> {{ tag.reminders }}</mat-cell>
                         </ng-container>
 
                         <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
                         <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
                     </mat-table>
                 </div>
-                
+
                 <tag-creation></tag-creation>
             </mat-tab>
 
@@ -240,7 +257,7 @@ export interface tagListEntry {
                     }
                 </mat-autocomplete>
 
-                @if (StateService.notes().length == 0 && StateService.reminders().length == 0) {
+                @if (stateService.notes().length == 0 && stateService.reminders().length == 0) {
                     <p class="warning">You do not have any notes or reminders</p>
                 } @else if (!tagExists() && searchTag() != '') {
                     <p class="warning">The tag <span class="bold"> {{ searchTag() }} </span> does not exist</p>
@@ -342,17 +359,17 @@ export interface tagListEntry {
     `,
 })
 export class App {
-
     search = new FormControl('')
+
     protected readonly cols = signal(3)
     protected readonly reminderHeight = computed(() => {
-        return {'height': (Math.ceil(StateService.reminders().length / this.cols()) * 11) + 'rem'};
+        return {'height': (Math.ceil(this.stateService.reminders().length / this.cols()) * 11) + 'rem'};
     })
     protected readonly noteHeight = computed(() => {
         try {
-            return {'height': (Math.ceil(StateService.notes().length / this.cols()) * (16 + (8 * (StateService.notes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), StateService.notes().at(0)!)).reminders.length))) + 'rem'};
+            return {'height': (Math.ceil(this.stateService.notes().length / this.cols()) * (16 + (8 * (this.stateService.notes().reduce(((acc, n, _, __) => (n.reminders.length > acc.reminders.length) ? n : acc), this.stateService.notes().at(0)!)).reminders.length))) + 'rem'};
         } catch (error) {
-            return {'height': (Math.ceil(StateService.notes().length / this.cols()) * 16) + 'rem'};
+            return {'height': (Math.ceil(this.stateService.notes().length / this.cols()) * 16) + 'rem'};
         }
     })
     protected readonly reminderSearchHeight = computed(() => {
@@ -378,28 +395,28 @@ export class App {
     protected readonly searchContent = signal('')
     protected readonly searchTag = signal('')
     protected readonly tagExists = computed(() => {
-        return StateService.tags().some(t => t.name.toLowerCase().trim() == this.searchTag().toLowerCase().trim());
+        return this.stateService.tags().some(t => t.name.toLowerCase().trim() == this.searchTag().toLowerCase().trim());
     })
     protected readonly filteredNotes = computed(() => {
         if (this.searchContent().trim() == '' && this.searchTag().trim() != '') {
-            return StateService.notes().filter(n => n.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim());
+            return this.stateService.notes().filter(n => n.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim());
         } else if (this.searchTag().trim() != '') {
             const regex = new RegExp(this.searchContent(), 'i')
-            return StateService.notes().filter(n => (regex.exec(n.name) != undefined || regex.exec(n.description) != undefined) && n.tag?.name == this.searchTag())
+            return this.stateService.notes().filter(n => (regex.exec(n.name) != undefined || regex.exec(n.description) != undefined) && n.tag?.name == this.searchTag())
         } else {
             const regex = new RegExp(this.searchContent(), 'i')
-            return StateService.notes().filter(n => regex.exec(n.name) != undefined || regex.exec(n.description) != undefined)
+            return this.stateService.notes().filter(n => regex.exec(n.name) != undefined || regex.exec(n.description) != undefined)
         }
     })
     protected readonly filteredReminders = computed(() => {
         if (this.searchContent().trim() == '' && this.searchTag().trim() != '') {
-            return StateService.reminders().filter(r => r.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim())
+            return this.stateService.reminders().filter(r => r.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim())
         } else if (this.searchTag().trim() != '') {
             const regex = new RegExp(this.searchContent(), 'i')
-            return StateService.reminders().filter(n => regex.exec(n.title) != undefined && n.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim())
+            return this.stateService.reminders().filter(n => regex.exec(n.title) != undefined && n.tag?.name.toLowerCase() == this.searchTag().toLowerCase().trim())
         } else {
             const regex = new RegExp(this.searchContent(), 'i')
-            return StateService.reminders().filter(n => regex.exec(n.title) != undefined)
+            return this.stateService.reminders().filter(n => regex.exec(n.title) != undefined)
         }
     })
     protected readonly filteredTags = computed(() => {
@@ -408,26 +425,19 @@ export class App {
         } else if (this.searchInput().length > 4 && !this.searchInput().toLowerCase().startsWith('tag:')) {
             return [];
         } else if (this.searchInput().length <= 4 && 'tag:'.startsWith(this.searchInput().toLowerCase().trim())) {
-            return StateService.tags().filter(t => StateService.notes().some((n: Note) => n.tag?.id == t.id) || StateService.reminders().some((r: Reminder) => r.tag?.id == t.id));
+            return this.stateService.tags().filter(t => this.stateService.notes().some((n: Note) => n.tag?.id == t.id) || this.stateService.reminders().some((r: Reminder) => r.tag?.id == t.id));
         } else if (this.searchInput().toLowerCase().startsWith('tag:')) {
-            return StateService.tags().filter(t => t.name.toLowerCase().startsWith(this.searchTag().toLowerCase())).filter(t => StateService.notes().some((n: Note) => n.tag?.id == t.id) || StateService.reminders().some((r: Reminder) => r.tag?.id == t.id));
+            return this.stateService.tags().filter(t => t.name.toLowerCase().startsWith(this.searchTag().toLowerCase())).filter(t => this.stateService.notes().some((n: Note) => n.tag?.id == t.id) || this.stateService.reminders().some((r: Reminder) => r.tag?.id == t.id));
         } else {
             return []
         }
     })
 
-    protected readonly StateService = StateService
     protected readonly Monitor = Monitor
 
+    tagData$;
     displayedColumns = ['name', 'notes', 'reminders']
-    dataSource: MatTableDataSource<tagListEntry> = new MatTableDataSource(StateService.tags().map(t => {
-        return {
-            name: t.name,
-            id: t.id,
-            notes: StateService.notes().filter(n => n.tag?.id == t.id).length,
-            reminders: StateService.reminders().filter(r => r.tag?.id == t.id).length,
-        }
-    }))
+    tagDataSource: DataSource<tagListEntry>
 
     constructor(protected readonly stateService: StateService) {
         this.cols.update(_ => this.calculateCols())
@@ -436,30 +446,16 @@ export class App {
             this.searchInput.update(_ => value!)
         });
 
-        toObservable(StateService.notes).subscribe(value => {this.dataSource.data = StateService.tags().map(t => {
-            return {
+        this.tagData$ = merge(toObservable(this.stateService.tags), toObservable(this.stateService.notes), toObservable(this.stateService.reminders)).pipe(debounceTime(1_000)).pipe(
+            map(() => this.stateService.tags().map(t => ({
                 name: t.name,
                 id: t.id,
-                notes: value.filter(n => n.tag?.id == t.id).length,
-                reminders: StateService.reminders().filter(r => r.tag?.id == t.id).length,
-            }
-        })})
-        toObservable(StateService.reminders).subscribe(value => {this.dataSource.data = StateService.tags().map(t => {
-            return {
-                name: t.name,
-                id: t.id,
-                notes: StateService.notes().filter(n => n.tag?.id == t.id).length,
-                reminders: value.filter(r => r.tag?.id == t.id).length,
-            }
-        })})
-        toObservable(StateService.tags).subscribe(value => {this.dataSource.data = value.map(t => {
-            return {
-                name: t.name,
-                id: t.id,
-                notes: StateService.notes().filter(n => n.tag?.id == t.id).length,
-                reminders: StateService.reminders().filter(r => r.tag?.id == t.id).length,
-            }
-        })})
+                notes: this.stateService.notes().filter(n => n.tag?.id == t.id).length,
+                reminders: this.stateService.reminders().filter(r => r.tag?.id == t.id).length,
+            })))
+        );
+
+        this.tagDataSource = new TagStatistics(this.tagData$)
     }
 
     @HostListener('window:resize', ['$event'])

@@ -20,11 +20,11 @@ function waitUntil(condition: any, checkInterval = 100) {
 
 export class StateService {
 
-    public static readonly notes: WritableSignal<Note[]> = signal([])
-    public static readonly reminders: WritableSignal<Reminder[]> = signal([])
-    public static readonly tags: WritableSignal<Tag[]> = signal([])
+    public readonly notes: WritableSignal<Note[]> = signal([])
+    public readonly reminders: WritableSignal<Reminder[]> = signal([])
+    public readonly tags: WritableSignal<Tag[]> = signal([])
 
-    public static readonly working: WritableSignal<boolean> = signal(false)
+    public readonly working: WritableSignal<boolean> = signal(false)
 
     public static readonly delay: number = 0
 
@@ -40,20 +40,20 @@ export class StateService {
 
     async updateNotes() {
         this.noteService.getAll().subscribe(notes => {
-            StateService.notes.update(_ => notes)
+            this.notes.update(_ => notes)
         })
     }
 
     async updateReminders() {
         this.reminderService.getAll().subscribe(reminders => {
-            StateService.reminders.update(_ => reminders)
+            this.reminders.update(_ => reminders)
         })
         await this.updateNotes()
     }
 
     async updateTags() {
         this.tagService.getAll().subscribe(tags => {
-            StateService.tags.update(_ => tags)
+            this.tags.update(_ => tags)
         })
         await this.updateReminders()
     }
@@ -61,16 +61,16 @@ export class StateService {
     async addNote(note: Note) {
         const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.notes.update(v => [...v, note])
+        this.working.update(_ => true)
+        this.notes.update(v => [...v, note])
         this.noteService.create(note).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
-                StateService.notes.update(v => v.map(n => {
+                this.notes.update(v => v.map(n => {
                         if (n.id == -1) {
                             return result as Note
                         } else {
@@ -79,7 +79,7 @@ export class StateService {
                     }
                 ))
             }
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -87,16 +87,16 @@ export class StateService {
     async addReminder(reminder: Reminder) {
         const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.reminders.update(v => [...v, reminder])
+        this.working.update(_ => true)
+        this.reminders.update(v => [...v, reminder])
         this.reminderService.create(reminder).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
-                StateService.reminders.update(v => v.map(r => {
+                this.reminders.update(v => v.map(r => {
                         if (r.id == -1) {
                             return result as Reminder
                         } else {
@@ -105,7 +105,7 @@ export class StateService {
                     }
                 ))
             }
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -113,16 +113,16 @@ export class StateService {
     async addTag(tag: Tag) {
         const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.tags.update(v => [...v, tag])
+        this.working.update(_ => true)
+        this.tags.update(v => [...v, tag])
         this.tagService.create(tag).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
-                StateService.tags.update(v => v.map(t => {
+                this.tags.update(v => v.map(t => {
                         if (t.id == -1) {
                             return result as Tag
                         } else {
@@ -131,7 +131,7 @@ export class StateService {
                     }
                 ))
             }
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -139,15 +139,15 @@ export class StateService {
     async deleteNote(id: number) {
         const lock = Monitor.register();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.notes.update(v => v.filter(n => n.id != id))
+        this.working.update(_ => true)
+        this.notes.update(v => v.filter(n => n.id != id))
         this.noteService.delete(id).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-                StateService.working.update(_ => false)
+                this.working.update(_ => false)
                 Monitor.deregister(lock)
             }
         );
@@ -156,9 +156,9 @@ export class StateService {
     async deleteReminder(id: number) {
         const lock = Monitor.register();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.reminders.update(v => v.filter(r => r.id != id))
-        StateService.notes.update(v => v.map(n => {
+        this.working.update(_ => true)
+        this.reminders.update(v => v.filter(r => r.id != id))
+        this.notes.update(v => v.map(n => {
             return {
                 id: n.id,
                 name: n.name,
@@ -169,11 +169,11 @@ export class StateService {
         }))
         this.reminderService.delete(id).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -181,9 +181,9 @@ export class StateService {
     async deleteTag(id: number) {
         const lock = Monitor.register();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.tags.update(v => v.filter(t => t.id != id))
-        StateService.notes.update(v => v.map(n => {
+        this.working.update(_ => true)
+        this.tags.update(v => v.filter(t => t.id != id))
+        this.notes.update(v => v.map(n => {
             return {
                 id: n.id,
                 name: n.name,
@@ -192,7 +192,7 @@ export class StateService {
                 tag: (n.tag != undefined && n.tag.id == id) ? undefined : n.tag
             }
         }))
-        StateService.reminders.update(v => v.map(r => {
+        this.reminders.update(v => v.map(r => {
             return {
                 id: r.id,
                 title: r.title,
@@ -203,11 +203,11 @@ export class StateService {
         }))
         this.tagService.delete(id).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         });
     }
@@ -215,8 +215,8 @@ export class StateService {
     async editNote(note: Note) {
         const lock = Monitor.register();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.notes.update(v => v.map(n => {
+        this.working.update(_ => true)
+        this.notes.update(v => v.map(n => {
             if (n.id == note.id) {
                 return note
             } else {
@@ -225,11 +225,11 @@ export class StateService {
         }))
         this.noteService.update(note).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -237,15 +237,15 @@ export class StateService {
     async editReminder(reminder: Reminder) {
         const lock = Monitor.register();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.reminders.update(v => v.map(r => {
+        this.working.update(_ => true)
+        this.reminders.update(v => v.map(r => {
             if (r.id == reminder.id) {
                 return reminder
             } else {
                 return r
             }
         }))
-        StateService.notes.update(v => v.map(n => {
+        this.notes.update(v => v.map(n => {
             return {
                 id: n.id,
                 name: n.name,
@@ -262,11 +262,11 @@ export class StateService {
         }))
         this.reminderService.update(reminder).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -274,15 +274,15 @@ export class StateService {
     async editTag(tag: Tag) {
         const lock = Monitor.register();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.tags.update(v => v.map(t => {
+        this.working.update(_ => true)
+        this.tags.update(v => v.map(t => {
             if (t.id == tag.id) {
                 return tag
             } else {
                 return t
             }
         }))
-        StateService.notes.update(v => v.map(n => {
+        this.notes.update(v => v.map(n => {
             return {
                 id: n.id,
                 name: n.name,
@@ -291,7 +291,7 @@ export class StateService {
                 tag: (n.tag != undefined && n.tag.id == tag.id) ? tag : n.tag
             }
         }))
-        StateService.reminders.update(v => v.map(r => {
+        this.reminders.update(v => v.map(r => {
             return {
                 id: r.id,
                 title: r.title,
@@ -302,11 +302,11 @@ export class StateService {
         }))
         this.tagService.update(tag).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -314,8 +314,8 @@ export class StateService {
     async completeReminder(id: number) {
         const lock = Monitor.register();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.reminders.update(v => v.map(r => {
+        this.working.update(_ => true)
+        this.reminders.update(v => v.map(r => {
             if (r.id == id) {
                 return {
                     id: r.id,
@@ -328,7 +328,7 @@ export class StateService {
                 return r
             }
         }))
-        StateService.notes.update(v => v.map(n => {
+        this.notes.update(v => v.map(n => {
             if (n.reminders.some(r => r.id == id)) {
                 return {
                     id: n.id,
@@ -354,11 +354,11 @@ export class StateService {
         }))
         this.reminderService.complete(id).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -366,9 +366,9 @@ export class StateService {
     async assignReminder(id: number, rId: number) {
         const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        const reminder = StateService.reminders().find(r => r.id == rId)
-        StateService.notes.update(v => v.map(n => {
+        this.working.update(_ => true)
+        const reminder = this.reminders().find(r => r.id == rId)
+        this.notes.update(v => v.map(n => {
             if (n.id == id) {
                 return {
                     id: n.id,
@@ -383,11 +383,11 @@ export class StateService {
         }))
         this.noteService.addReminder(id, rId).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -395,8 +395,8 @@ export class StateService {
     async removeReminder(id: number, rId: number) {
         const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.notes.update(v => v.map(n => {
+        this.working.update(_ => true)
+        this.notes.update(v => v.map(n => {
             if (n.id == id) {
                 return {
                     id: n.id,
@@ -411,11 +411,11 @@ export class StateService {
         }))
         this.noteService.removeReminder(id, rId).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         })
     }
@@ -423,8 +423,8 @@ export class StateService {
     async mergeTags(id1: number, id2: number) {
         const lock = Monitor.register();
         await waitUntil(() => Monitor.isActive(lock));
-        StateService.working.update(_ => true)
-        StateService.notes.update(v => v.map(n => {
+        this.working.update(_ => true)
+        this.notes.update(v => v.map(n => {
             return {
                 id: n.id,
                 name: n.name,
@@ -433,7 +433,7 @@ export class StateService {
                 tag: (n.tag != undefined && n.tag.id == id2) ? this.getTagById(id1) : n.tag
             }
         }))
-        StateService.reminders.update(v => v.map(r => {
+        this.reminders.update(v => v.map(r => {
             return {
                 id: r.id,
                 title: r.title,
@@ -442,28 +442,28 @@ export class StateService {
                 tag: (r.tag != undefined && r.tag.id == id2) ? this.getTagById(id1) : r.tag
             }
         }))
-        StateService.tags.update(v => v.filter(t => t.id != id2))
+        this.tags.update(v => v.filter(t => t.id != id2))
         this.tagService.merge(id1, id2).pipe(catchError(error => {
             this.updateTags()
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
-            StateService.working.update(_ => false)
+            this.working.update(_ => false)
             Monitor.deregister(lock)
         });
     }
 
     getNoteById(id: number) {
-        return StateService.notes().find(n => n.id == id)
+        return this.notes().find(n => n.id == id)
     }
 
     getReminderById(id: number) {
-        return StateService.reminders().find(r => r.id == id)
+        return this.reminders().find(r => r.id == id)
     }
 
     getTagById(id: number) {
-        return StateService.tags().find(t => t.id == id)
+        return this.tags().find(t => t.id == id)
     }
 }
 

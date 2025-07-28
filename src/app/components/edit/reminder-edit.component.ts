@@ -70,7 +70,7 @@ export class ReminderEditComponent {
                 <mat-label>tag</mat-label>
                 <mat-select [formControl]="tag">
                     <mat-option [value]="-1">no tag</mat-option>
-                    @for (tag of StateService.tags(); track tag.id) {
+                    @for (tag of stateService.tags(); track tag.id) {
                         <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
                     }
                 </mat-select>
@@ -79,7 +79,7 @@ export class ReminderEditComponent {
                 <mat-label>note</mat-label>
                 <mat-select [formControl]="note">
                     <mat-option value="">none</mat-option>
-                    @for (note of StateService.notes(); track note.id) {
+                    @for (note of stateService.notes(); track note.id) {
                         <mat-option [value]="note.name">{{ note.name }}</mat-option>
                     }
                 </mat-select>
@@ -119,12 +119,10 @@ export class EditReminderSheet {
     private _bottomSheetRef =
         inject<MatBottomSheetRef<EditReminderSheet>>(MatBottomSheetRef);
 
-    protected readonly StateService = StateService;
-
-    constructor(private stateService: StateService, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {id: number}) {
+    constructor(protected stateService: StateService, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {id: number}) {
 
         const reminder = stateService.getReminderById(this.data.id)
-        const assignedNote = StateService.notes().find(n => n.reminders.some(reminder => reminder.id == reminder.id))
+        const assignedNote = this.stateService.notes().find(n => n.reminders.some(reminder => reminder.id == reminder.id))
 
         if (reminder != undefined) {
             this.title = new FormControl(reminder.title);
@@ -145,7 +143,7 @@ export class EditReminderSheet {
             tag: this.stateService.getTagById(this.tag.value!),
         })
 
-        StateService.notes().filter(n => {
+        this.stateService.notes().filter(n => {
             return n.reminders.some(r => r.id == this.data.id) || n.name == this.note.value
         }).forEach((note: Note) => {
             if (note.name == this.note.value) {

@@ -1,5 +1,5 @@
 import {Component, inject, signal} from '@angular/core';
-import {FormControl, ReactiveFormsModule} from '@angular/forms';
+import {FormBuilder, FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButton, MatFabButton} from "@angular/material/button";
 import {MatFormField, MatInput} from "@angular/material/input";
 import {MatLabel} from "@angular/material/form-field";
@@ -36,20 +36,20 @@ export class NoteCreationComponent {
 @Component({
     selector: 'create-note-sheet',
     template: `
-        <form class="sheetForm">
+        <form class="sheetForm" [formGroup]="form">
             <mat-form-field>
                 <mat-label>title</mat-label>
-                <input matInput type="text" id="title" [formControl]="title" required>
+                <input matInput type="text" id="title" formControlName="title" required>
             </mat-form-field>
             <mat-form-field>
                 <mat-label>description</mat-label>
-                <textarea matInput type="text" id="desc" [formControl]="desc" required></textarea>
+                <textarea matInput type="text" id="desc" formControlName="description" required></textarea>
             </mat-form-field>
             <mat-form-field>
                 <mat-label>tag</mat-label>
-                <mat-select [formControl]="tag">
+                <mat-select formControlName="tag">
                     <mat-option [value]="-1">no tag</mat-option>
-                    @for (tag of StateService.tags(); track tag.id) {
+                    @for (tag of stateService.tags(); track tag.id) {
                         <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
                     }
                 </mat-select>
@@ -70,25 +70,29 @@ export class NoteCreationComponent {
 })
 
 export class CreateNoteSheet {
-    title = new FormControl('');
-    desc = new FormControl('');
-    tag = new FormControl(-1);
+    readonly form;
 
     waiting = signal(false)
 
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateNoteSheet>>(MatBottomSheetRef);
 
-    constructor(private stateService: StateService) {}
+    constructor(protected stateService: StateService, protected readonly fb: FormBuilder) {
+        this.form = fb.group({
+            title: this.fb.control('', [Validators.required]),
+            description: this.fb.control(''),
+            tag: this.fb.control(-1, [Validators.required]),
+        })
+    }
 
     add() {
         this.waiting.update(_ => true)
         this.stateService.addNote({
             id: -1,
-            name: this.title.value!.trim(),
-            description: this.desc.value!.trim(),
+            name: this.form.value.title!.trim(),
+            description: this.form.value.description!.trim(),
             reminders: [],
-            tag: this.stateService.getTagById(this.tag.value!),
+            tag: this.stateService.getTagById(this.form.value.tag!),
         })
         this._bottomSheetRef.dismiss()
     }

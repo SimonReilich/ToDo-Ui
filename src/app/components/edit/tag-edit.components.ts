@@ -76,14 +76,12 @@ export class CreateNoteSheet {
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateNoteSheet>>(MatBottomSheetRef);
 
-  protected readonly StateService = StateService;
-
     constructor(private stateService: StateService, @Inject(MAT_BOTTOM_SHEET_DATA) public data: { id: number }) {
         const tag = stateService.getTagById(this.data.id)
         if (tag != undefined) {
             this.name = new FormControl(tag.name)
         }
-        this.other = StateService.tags().filter(t => t.id != this.data.id)
+        this.other = this.stateService.tags().filter(t => t.id != this.data.id)
     }
 
     edit() {

@@ -69,7 +69,7 @@ export class ReminderCreationComponent {
                 <mat-label>tag</mat-label>
                 <mat-select [formControl]="tag">
                     <mat-option [value]="-1">no tag</mat-option>
-                    @for (tag of StateService.tags(); track tag.id) {
+                    @for (tag of stateService.tags(); track tag.id) {
                         <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
                     }
                 </mat-select>
@@ -108,7 +108,7 @@ export class CreateReminderSheet {
     private _bottomSheetRef =
         inject<MatBottomSheetRef<CreateReminderSheet>>(MatBottomSheetRef);
 
-    constructor(private stateService: StateService) {}
+    constructor(protected stateService: StateService) {}
 
     add() {
         this.stateService.addReminder({
