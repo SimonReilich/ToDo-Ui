@@ -20,13 +20,11 @@ function waitUntil(condition: any, checkInterval = 100) {
 
 export class StateService {
 
+    public static readonly delay: number = 0
     public readonly notes: WritableSignal<Note[]> = signal([])
     public readonly reminders: WritableSignal<Reminder[]> = signal([])
     public readonly tags: WritableSignal<Tag[]> = signal([])
-
     public readonly working: WritableSignal<boolean> = signal(false)
-
-    public static readonly delay: number = 0
 
     constructor(protected noteService: NoteService, protected reminderService: ReminderService, protected tagService: TagService) {
         this.updateTags().then(() => this.refresh())
@@ -387,6 +385,54 @@ export class StateService {
             Monitor.deregister(lock)
             return error
         })).subscribe(_ => {
+            this.working.update(_ => false)
+            Monitor.deregister(lock)
+        })
+    }
+
+    async createAndAssignReminder(id: number, reminder: Reminder) {
+        const lock = Monitor.registerExcl();
+        await waitUntil(() => Monitor.isActive(lock));
+        this.working.update(_ => true)
+        this.reminders.update(v => [...v, reminder])
+        this.reminderService.create(reminder).pipe(catchError(error => {
+            this.updateTags()
+            this.working.update(_ => false)
+            Monitor.deregister(lock)
+            return error
+        })).subscribe(result => {
+            if (typeof result === 'object') {
+                this.reminders.update(v => v.map(r => {
+                        if (r.id == -1) {
+                            this.notes.update(v => v.map(n => {
+                                if (n.id == id) {
+                                    return {
+                                        id: n.id,
+                                        name: n.name,
+                                        description: n.description,
+                                        reminders: [...n.reminders, result as Reminder],
+                                        tag: n.tag
+                                    }
+                                } else {
+                                    return n
+                                }
+                            }))
+                            this.noteService.addReminder(id, (result as Reminder).id).pipe(catchError(error => {
+                                this.updateTags()
+                                this.working.update(_ => false)
+                                Monitor.deregister(lock)
+                                return error
+                            })).subscribe(_ => {
+                                this.working.update(_ => false)
+                                Monitor.deregister(lock)
+                            })
+                            return result as Reminder
+                        } else {
+                            return r
+                        }
+                    }
+                ))
+            }
             this.working.update(_ => false)
             Monitor.deregister(lock)
         })

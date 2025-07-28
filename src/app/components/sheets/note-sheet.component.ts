@@ -56,6 +56,7 @@ export class NoteSheet {
 
     constructor(protected stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {id?: number}) {
         const note = stateService.getNoteById(this.data.id!)
+
         if (note == undefined) {
             this.form = fb.group({
                 title: this.fb.control('', [Validators.required]),
