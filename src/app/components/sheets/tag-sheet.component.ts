@@ -60,12 +60,14 @@ export class TagSheet {
 
     protected readonly other: Tag[]
     protected readonly mode: 'create' | 'modify'
+    protected readonly REGEX = new RegExp("^[a-zA-Z0-9]+$")
+    protected readonly console = console;
     private _bottomSheetRef =
         inject<MatBottomSheetRef<TagSheet>>(MatBottomSheetRef);
 
-    protected readonly REGEX = new RegExp("^[a-zA-Z0-9]+$")
-
-    constructor(private stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data: { id?: number }) {
+    constructor(private stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data: {
+        id?: number
+    }) {
         if (this.data == null) {
             this.form = fb.group({
                 name: this.fb.control('', [Validators.pattern(this.REGEX), Validators.required]),
@@ -109,6 +111,4 @@ export class TagSheet {
         this.stateService.deleteTag(this.data.id!)
         this._bottomSheetRef.dismiss()
     }
-
-    protected readonly console = console;
 }

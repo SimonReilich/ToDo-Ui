@@ -1,4 +1,3 @@
-
 // Include theming for Angular Material with `mat.theme()`.
 // This Sass mixin will define CSS variables that are used for styling Angular Material
 // components according to the Material 3 design spec.
@@ -8,12 +7,12 @@
 
 html {
   @include mat.theme((
-    color: (
-      primary: mat.$cyan-palette,
-      tertiary: mat.$orange-palette,
-    ),
-    typography: Roboto,
-    density: 0,
+          color: (
+                  primary: mat.$cyan-palette,
+                  tertiary: mat.$orange-palette,
+          ),
+          typography: Roboto,
+          density: 0,
   ));
 
   // Default the application to a light color theme. This can be changed to
@@ -27,7 +26,9 @@ html {
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
-}/* You can add global styles to this file, and also import other style files */
+}
+
+/* You can add global styles to this file, and also import other style files */
 
 .card {
   padding: 0.5em;
@@ -228,6 +229,7 @@ mat-table {
   mat-chip {
     margin-block: 1rem;
   }
+
   width: auto;
 
   ng-container, mat-header-cell, mat-cell, mat-header-row, mat-row {

@@ -3,10 +3,13 @@ import {
     MatCell,
     MatCellDef,
     MatColumnDef,
-    MatHeaderCell, MatHeaderCellDef,
+    MatHeaderCell,
+    MatHeaderCellDef,
     MatHeaderRow,
     MatHeaderRowDef,
-    MatRow, MatRowDef, MatTable
+    MatRow,
+    MatRowDef,
+    MatTable
 } from "@angular/material/table";
 import {MatSort, MatSortHeader} from "@angular/material/sort";
 import {TagEditComponent} from "../edit/tag-edit.components";
@@ -33,6 +36,7 @@ class TagStatistics implements DataSource<any> {
     disconnect(_: CollectionViewer): void {
     }
 }
+
 @Component({
     selector: 'tag-table',
     imports: [

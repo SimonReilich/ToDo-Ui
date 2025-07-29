@@ -122,13 +122,14 @@ export class ReminderSheet {
                 done: false,
                 tag: this.stateService.getTagById(this.form.value.tag!),
             })
-        } else {this.stateService.addReminder({
-            id: -1,
-            title: this.form.value.title!.trim(),
-            date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0'),
-            done: false,
-            tag: this.stateService.getTagById(this.form.value.tag!),
-        })
+        } else {
+            this.stateService.addReminder({
+                id: -1,
+                title: this.form.value.title!.trim(),
+                date: this.value.toDateString() + '\n' + this.value.getHours().toString().padStart(2, '0') + ':' + this.value.getMinutes().toString().padStart(2, '0'),
+                done: false,
+                tag: this.stateService.getTagById(this.form.value.tag!),
+            })
         }
         this._bottomSheetRef.dismiss()
     }

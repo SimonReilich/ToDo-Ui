@@ -48,13 +48,13 @@ import {StateService} from "../../api/state.service";
 
 export class NoteSheet {
     readonly form
-
+    protected readonly mode: 'create' | 'modify'
     private _bottomSheetRef =
         inject<MatBottomSheetRef<NoteSheet>>(MatBottomSheetRef);
 
-    protected readonly mode: 'create' | 'modify'
-
-    constructor(protected stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data?: {id?: number}) {
+    constructor(protected stateService: StateService, protected readonly fb: FormBuilder, @Inject(MAT_BOTTOM_SHEET_DATA) public data?: {
+        id?: number
+    }) {
         if (this.data == null) {
             this.form = fb.group({
                 title: this.fb.control('', [Validators.required]),

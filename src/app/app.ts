@@ -15,21 +15,7 @@ import {SearchComponent} from "./components/display/search.component";
 
 @Component({
     selector: 'td-root',
-    imports: [
-        RouterOutlet,
-        NoteCreationComponent,
-        ReminderCreationComponent,
-        MatTabGroup,
-        MatTab,
-        MatToolbar,
-        MatProgressSpinner,
-        TagCreationComponent,
-        ReactiveFormsModule,
-        NoteGridComponent,
-        ReminderGridComponent,
-        TagTableComponent,
-        SearchComponent,
-    ],
+    imports: [RouterOutlet, NoteCreationComponent, ReminderCreationComponent, MatTabGroup, MatTab, MatToolbar, MatProgressSpinner, TagCreationComponent, ReactiveFormsModule, NoteGridComponent, ReminderGridComponent, TagTableComponent, SearchComponent,],
     template: `
         <mat-toolbar>
             <span>Welcome to your notes</span>
@@ -66,5 +52,6 @@ import {SearchComponent} from "./components/display/search.component";
     `,
 })
 export class App {
-    constructor(protected readonly stateService: StateService) {}
+    constructor(protected readonly stateService: StateService) {
+    }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {delay, Observable} from "rxjs";
 import {StateService} from "./state.service";
@@ -16,7 +16,8 @@ export interface Reminder {
     providedIn: 'root'
 })
 export class ReminderService {
-    constructor(private readonly http: HttpClient) { }
+    constructor(private readonly http: HttpClient) {
+    }
 
     getAll(): Observable<Reminder[]> {
         return this.http.get<Reminder[]>('/api/reminders').pipe(delay(StateService.delay))
