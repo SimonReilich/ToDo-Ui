@@ -14,22 +14,6 @@ function waitUntil(condition: any, checkInterval = 100) {
     })
 }
 
-function arraysEqual(a: any[], b: any[]) {
-    if (a === b) return true;
-    if (a == null || b == null) return false;
-    if (a.length !== b.length) return false;
-
-    // If you don't care about the order of the elements inside
-    // the array, you should sort both arrays here.
-    // Please note that calling sort on an array will modify that array.
-    // you might want to clone your array first.
-
-    for (let i = 0; i < a.length; ++i) {
-        if (a[i] !== b[i]) return false;
-    }
-    return true;
-}
-
 @Injectable({
     providedIn: 'root'
 })
@@ -73,7 +57,7 @@ export class StateService {
     }
 
     async addNote(note: Note) {
-        const lock = Monitor.register();
+        const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
         this.working.update(_ => true)
         this.notes.update(v => [...v, note])
@@ -84,14 +68,8 @@ export class StateService {
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
-                let acc = false
                 this.notes.update(v => v.map(n => {
-                        if (!acc && n.id == -1
-                            && n.name == (result as Note).name
-                            && n.description == (result as Note).description
-                            && arraysEqual(n.reminders, (result as Note).reminders)
-                            && n.tag == (result as Note).tag) {
-                            acc = true
+                        if (n.id == -1) {
                             return result as Note
                         } else {
                             return n
@@ -105,7 +83,7 @@ export class StateService {
     }
 
     async addReminder(reminder: Reminder) {
-        const lock = Monitor.register();
+        const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
         this.working.update(_ => true)
         this.reminders.update(v => [...v, reminder])
@@ -116,14 +94,8 @@ export class StateService {
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
-                let acc = false
                 this.reminders.update(v => v.map(r => {
-                        if (!acc && r.id == -1
-                            && r.title == (result as Reminder).title
-                            && r.date == (result as Reminder).date
-                            && r.done == (result as Reminder).done
-                            && r.tag == (result as Reminder).tag) {
-                            acc = true
+                        if (r.id == -1) {
                             return result as Reminder
                         } else {
                             return r
@@ -137,7 +109,7 @@ export class StateService {
     }
 
     async addTag(tag: Tag) {
-        const lock = Monitor.register();
+        const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
         this.working.update(_ => true)
         this.tags.update(v => [...v, tag])
@@ -148,11 +120,8 @@ export class StateService {
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
-                let acc = false
                 this.tags.update(v => v.map(t => {
-                        if (!acc && t.id == -1
-                            && t.name == (result as Tag).name) {
-                            acc = true
+                        if (t.id == -1) {
                             return result as Tag
                         } else {
                             return t
@@ -393,7 +362,7 @@ export class StateService {
     }
 
     async assignReminder(id: number, rId: number) {
-        const lock = Monitor.register();
+        const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
         this.working.update(_ => true)
         const reminder = this.reminders().find(r => r.id == rId)
@@ -422,7 +391,7 @@ export class StateService {
     }
 
     async addAndAssignReminder(id: number, reminder: Reminder) {
-        const lock = Monitor.register();
+        const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
         this.working.update(_ => true)
         this.reminders.update(v => [...v, reminder])
@@ -433,14 +402,8 @@ export class StateService {
             return error
         })).subscribe(result => {
             if (typeof result === 'object') {
-                let acc = false
                 this.reminders.update(v => v.map(r => {
-                        if (!acc && r.id == -1
-                            && r.title == (result as Reminder).title
-                            && r.date == (result as Reminder).date
-                            && r.done == (result as Reminder).done
-                            && r.tag == (result as Reminder).tag) {
-                            acc = true
+                        if (r.id == -1) {
                             this.notes.update(v => v.map(n => {
                                 if (n.id == id) {
                                     return {
@@ -476,7 +439,7 @@ export class StateService {
     }
 
     async removeReminder(id: number, rId: number) {
-        const lock = Monitor.register();
+        const lock = Monitor.registerExcl();
         await waitUntil(() => Monitor.isActive(lock));
         this.working.update(_ => true)
         this.notes.update(v => v.map(n => {
